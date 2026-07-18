@@ -30,9 +30,25 @@ func testRejectsAnEmptyTaskTitle() {
     }
 }
 
+func testPersistsCreatedTasksToDisk() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("json")
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let task = try TaskStore().create(title: "Send the agenda")
+    let persistence = TaskFileStore(fileURL: fileURL)
+
+    try persistence.save([task])
+
+    let restoredTasks = try persistence.load()
+    expect(restoredTasks == [task], "saved tasks are restored")
+}
+
 do {
     try testCreatesAnInboxTaskFromAWhitespacePaddedTitle()
     testRejectsAnEmptyTaskTitle()
+    try testPersistsCreatedTasksToDisk()
     print("TaskStore tests passed.")
 } catch {
     fatalError("Test failed: \(error)")
