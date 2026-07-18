@@ -10,9 +10,9 @@ The project needs macOS and the Swift toolchain. Choose a bundle identifier you 
 BIRD_TODO_BUNDLE_ID=com.example.birdtodo zsh Scripts/package-app.zsh
 ```
 
-This creates `release/BirdTodo.app`. Open it from Finder or move it to `/Applications` for local use.
+This creates `release/BirdTodo.app`. The build performs an ad hoc signature so Finder can verify that the bundle is internally consistent. Open it from Finder or move it to `/Applications` for local use.
 
-The generated bundle is for local testing only. It is not signed or notarized, so it is not yet suitable for public download.
+The generated bundle is for local testing only. It is not Developer ID-signed or notarized, so it is not yet suitable for public download.
 
 ## Public release prerequisites
 

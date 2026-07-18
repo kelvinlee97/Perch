@@ -8,6 +8,7 @@ build_number=${BIRD_TODO_BUILD_NUMBER:-1}
 build_dir=${BUILD_DIR:-"$root_dir/.build"}
 output_dir=${OUTPUT_DIR:-"$root_dir/release"}
 app_path="$output_dir/BirdTodo.app"
+code_sign_identity=${CODE_SIGN_IDENTITY:--}
 
 if [[ -e "$app_path" ]]; then
     print -u2 "Refusing to overwrite $app_path"
@@ -23,5 +24,6 @@ plutil -replace CFBundleIdentifier -string "$bundle_id" "$app_path/Contents/Info
 plutil -replace CFBundleShortVersionString -string "$version" "$app_path/Contents/Info.plist"
 plutil -replace CFBundleVersion -string "$build_number" "$app_path/Contents/Info.plist"
 plutil -lint "$app_path/Contents/Info.plist" >/dev/null
+codesign --force --sign "$code_sign_identity" "$app_path"
 
 print "Created $app_path"

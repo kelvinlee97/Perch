@@ -16,5 +16,6 @@ app_path="$temp_dir/release/BirdTodo.app"
 [[ "$(plutil -extract CFBundleIdentifier raw "$app_path/Contents/Info.plist")" == "com.example.birdtodo" ]]
 [[ "$(plutil -extract CFBundlePackageType raw "$app_path/Contents/Info.plist")" == "APPL" ]]
 plutil -lint "$app_path/Contents/Info.plist" >/dev/null
+codesign --verify --deep --strict "$app_path"
 
 print "App bundle test passed."
