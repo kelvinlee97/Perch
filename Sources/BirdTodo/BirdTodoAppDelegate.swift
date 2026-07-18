@@ -67,9 +67,9 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
         guard let screen = NSScreen.main else { return }
 
         let frame = BirdWindowLayout.frame(in: screen.visibleFrame, size: birdSize, corner: .bottomRight)
-        let panel = NSPanel(
+        let panel = BirdPanel(
             contentRect: frame,
-            styleMask: [.borderless, .nonactivatingPanel],
+            styleMask: [.borderless],
             backing: .buffered,
             defer: false
         )
@@ -78,9 +78,23 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
         panel.hasShadow = false
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.contentView = BirdView(frame: NSRect(origin: .zero, size: birdSize)) { [weak self] in
-            self?.showCapture()
-        }
+        let button = NSButton(frame: NSRect(origin: .zero, size: birdSize))
+        button.image = NSImage(
+            systemSymbolName: "bird.fill",
+            accessibilityDescription: "新建待办"
+        )
+        button.contentTintColor = NSColor(
+            calibratedRed: 0.16,
+            green: 0.34,
+            blue: 0.26,
+            alpha: 1
+        )
+        button.imageScaling = .scaleProportionallyUpOrDown
+        button.isBordered = false
+        button.toolTip = "点击新建待办"
+        button.target = self
+        button.action = #selector(showQuickCapture)
+        panel.contentView = button
         panel.orderFrontRegardless()
         birdWindow = panel
     }
@@ -113,13 +127,19 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
         captureWindow = panel
     }
 
-    private func createTask(title: String, reminder: QuickReminder) {
+    private func createTask(title: String, reminder: QuickReminder) -> String? {
         do {
-            _ = try taskRepository?.create(title: title, reminderAt: reminder.reminderDate())
+            guard let taskRepository else {
+                return "待办尚未准备好，请稍后再试。"
+            }
+            _ = try taskRepository.create(title: title, reminderAt: reminder.reminderDate())
             captureWindow?.orderOut(nil)
             captureWindow = nil
+            return nil
+        } catch TaskStoreError.emptyTitle {
+            return TaskStoreError.emptyTitle.localizedDescription
         } catch {
-            NSApp.presentError(error)
+            return "无法保存待办，请稍后再试。"
         }
     }
 
@@ -135,48 +155,26 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-private final class BirdView: NSView {
-    private let onClick: () -> Void
-
-    init(frame frameRect: NSRect, onClick: @escaping () -> Void) {
-        self.onClick = onClick
-        super.init(frame: frameRect)
-
-        let imageView = NSImageView(frame: bounds.insetBy(dx: 8, dy: 8))
-        imageView.image = NSImage(
-            systemSymbolName: "bird.fill",
-            accessibilityDescription: "Bird Todo"
-        )
-        imageView.contentTintColor = NSColor(calibratedRed: 0.16, green: 0.34, blue: 0.26, alpha: 1)
-        imageView.imageScaling = .scaleProportionallyUpOrDown
-        addSubview(imageView)
-        setAccessibilityRole(.button)
-        setAccessibilityLabel("New Task")
-        toolTip = "点击新建待办"
+private final class BirdPanel: NSPanel {
+    override var canBecomeKey: Bool {
+        true
     }
 
-    required init?(coder: NSCoder) {
-        nil
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        onClick()
-    }
-
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        bounds.contains(point) ? self : nil
+    override var canBecomeMain: Bool {
+        false
     }
 }
 
 private final class CaptureView: NSView {
     private let field = NSTextField()
-    private let onSubmit: (String, QuickReminder) -> Void
+    private let validationLabel = NSTextField(labelWithString: "")
+    private let onSubmit: (String, QuickReminder) -> String?
 
     var inputField: NSTextField {
         field
     }
 
-    init(frame frameRect: NSRect, onSubmit: @escaping (String, QuickReminder) -> Void) {
+    init(frame frameRect: NSRect, onSubmit: @escaping (String, QuickReminder) -> String?) {
         self.onSubmit = onSubmit
         super.init(frame: frameRect)
 
@@ -191,6 +189,11 @@ private final class CaptureView: NSView {
         field.target = self
         field.action = #selector(submitInbox)
         addSubview(field)
+
+        validationLabel.frame = NSRect(x: 16, y: 68, width: 288, height: 16)
+        validationLabel.textColor = .systemRed
+        validationLabel.font = .systemFont(ofSize: 11)
+        addSubview(validationLabel)
 
         addButton(title: "收集箱", action: #selector(submitInbox), x: 16)
         addButton(title: "10 分钟", action: #selector(submitTenMinutes), x: 88)
@@ -227,6 +230,6 @@ private final class CaptureView: NSView {
     }
 
     private func submit(_ reminder: QuickReminder) {
-        onSubmit(field.stringValue, reminder)
+        validationLabel.stringValue = onSubmit(field.stringValue, reminder) ?? ""
     }
 }

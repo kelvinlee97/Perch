@@ -31,6 +31,13 @@ func testRejectsAnEmptyTaskTitle() {
     }
 }
 
+func testDescribesAnEmptyTitleForPeople() {
+    expect(
+        TaskStoreError.emptyTitle.errorDescription == "请输入待办内容。",
+        "empty titles have a clear validation message"
+    )
+}
+
 func testPersistsCreatedTasksToDisk() throws {
     let fileURL = FileManager.default.temporaryDirectory
         .appendingPathComponent(UUID().uuidString)
@@ -128,6 +135,7 @@ func testQuickReminderTimesArePredictable() {
 do {
     try testCreatesAnInboxTaskFromAWhitespacePaddedTitle()
     testRejectsAnEmptyTaskTitle()
+    testDescribesAnEmptyTitleForPeople()
     try testPersistsCreatedTasksToDisk()
     testPlacesTheBirdInsideTheBottomRightScreenCorner()
     try testRepositoryRestoresTasksAfterItIsReopened()
