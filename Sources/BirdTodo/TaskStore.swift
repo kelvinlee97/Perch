@@ -18,6 +18,18 @@ enum TaskStoreError: Error, Equatable {
     case emptyTitle
 }
 
+enum ReminderQueue {
+    static func nextDueTask(from tasks: [Task], now: Date) -> Task? {
+        tasks
+            .filter { task in
+                task.status == .today && (task.reminderAt ?? .distantFuture) <= now
+            }
+            .min { left, right in
+                (left.reminderAt ?? .distantFuture) < (right.reminderAt ?? .distantFuture)
+            }
+    }
+}
+
 final class TaskStore {
     private(set) var tasks: [Task] = []
 

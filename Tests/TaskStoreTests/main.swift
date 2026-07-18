@@ -71,12 +71,45 @@ func testRepositoryRestoresTasksAfterItIsReopened() throws {
     expect(secondLaunch.tasks == [createdTask], "tasks survive reopening the app")
 }
 
+func testSelectsTheOldestDueTask() {
+    let now = Date(timeIntervalSinceReferenceDate: 10_000)
+    let olderDueTask = Task(
+        id: UUID(),
+        title: "Send follow-up",
+        createdAt: now,
+        reminderAt: now.addingTimeInterval(-120),
+        status: .today
+    )
+    let newerDueTask = Task(
+        id: UUID(),
+        title: "Join stand-up",
+        createdAt: now,
+        reminderAt: now.addingTimeInterval(-30),
+        status: .today
+    )
+    let futureTask = Task(
+        id: UUID(),
+        title: "Review proposal",
+        createdAt: now,
+        reminderAt: now.addingTimeInterval(60),
+        status: .today
+    )
+
+    let nextTask = ReminderQueue.nextDueTask(
+        from: [newerDueTask, futureTask, olderDueTask],
+        now: now
+    )
+
+    expect(nextTask == olderDueTask, "the oldest due task is shown first")
+}
+
 do {
     try testCreatesAnInboxTaskFromAWhitespacePaddedTitle()
     testRejectsAnEmptyTaskTitle()
     try testPersistsCreatedTasksToDisk()
     testPlacesTheBirdInsideTheBottomRightScreenCorner()
     try testRepositoryRestoresTasksAfterItIsReopened()
+    testSelectsTheOldestDueTask()
     print("TaskStore tests passed.")
 } catch {
     fatalError("Test failed: \(error)")
