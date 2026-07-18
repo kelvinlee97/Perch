@@ -52,12 +52,6 @@ enum ReminderQueue {
     }
 }
 
-enum AppLaunchPresentation {
-    static func showsQuickCapture(for tasks: [Task]) -> Bool {
-        tasks.isEmpty
-    }
-}
-
 final class TaskStore {
     private(set) var tasks: [Task] = []
 

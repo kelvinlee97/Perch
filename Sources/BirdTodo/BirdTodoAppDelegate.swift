@@ -2,7 +2,7 @@ import AppKit
 
 @MainActor
 final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
-    private let birdSize = CGSize(width: 64, height: 64)
+    private let birdSize = CGSize(width: 88, height: 88)
     private var birdWindow: NSPanel?
     private var captureWindow: NSPanel?
     private var statusItem: NSStatusItem?
@@ -18,10 +18,11 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
 
         configureStatusItem()
         showBird()
+        showCapture()
+    }
 
-        if let taskRepository, AppLaunchPresentation.showsQuickCapture(for: taskRepository.tasks) {
-            showCapture()
-        }
+    func applicationDidBecomeActive(_ notification: Notification) {
+        showCapture()
     }
 
     @objc private func toggleBird() {
@@ -41,6 +42,10 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
+    @objc private func showQuickCapture() {
+        showCapture()
+    }
+
     private func configureStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(
@@ -49,6 +54,8 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let menu = NSMenu()
+        menu.addItem(withTitle: "New Task", action: #selector(showQuickCapture), keyEquivalent: "n")
+        menu.addItem(.separator())
         menu.addItem(withTitle: "Show Bird", action: #selector(toggleBird), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Bird Todo", action: #selector(quit), keyEquivalent: "q")
@@ -79,29 +86,27 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showCapture() {
-        guard let birdWindow else { return }
+        if let captureWindow, captureWindow.isVisible {
+            captureWindow.makeKeyAndOrderFront(nil)
+            return
+        }
 
-        let captureSize = CGSize(width: 280, height: 112)
-        let frame = NSRect(
-            x: birdWindow.frame.maxX - captureSize.width,
-            y: birdWindow.frame.maxY + 10,
-            width: captureSize.width,
-            height: captureSize.height
-        )
+        guard birdWindow != nil else { return }
+
+        let captureSize = CGSize(width: 320, height: 170)
         let panel = NSPanel(
-            contentRect: frame,
-            styleMask: [.borderless, .nonactivatingPanel],
+            contentRect: NSRect(origin: .zero, size: captureSize),
+            styleMask: [.titled, .closable, .utilityWindow],
             backing: .buffered,
             defer: false
         )
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = true
-        panel.level = .floating
+        panel.title = "Bird Todo"
+        panel.isReleasedWhenClosed = false
         let captureView = CaptureView(frame: NSRect(origin: .zero, size: captureSize)) { [weak self] title, reminder in
             self?.createTask(title: title, reminder: reminder)
         }
         panel.contentView = captureView
+        panel.center()
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         panel.makeFirstResponder(captureView.inputField)
@@ -145,6 +150,8 @@ private final class BirdView: NSView {
         imageView.contentTintColor = NSColor(calibratedRed: 0.16, green: 0.34, blue: 0.26, alpha: 1)
         imageView.imageScaling = .scaleProportionallyUpOrDown
         addSubview(imageView)
+        setAccessibilityRole(.button)
+        setAccessibilityLabel("New Task")
     }
 
     required init?(coder: NSCoder) {
@@ -153,6 +160,10 @@ private final class BirdView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         onClick()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        bounds.contains(point) ? self : nil
     }
 }
 
@@ -168,19 +179,20 @@ private final class CaptureView: NSView {
         self.onSubmit = onSubmit
         super.init(frame: frameRect)
 
-        wantsLayer = true
-        layer?.cornerRadius = 12
-        layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.96).cgColor
+        let titleLabel = NSTextField(labelWithString: "What needs your attention?")
+        titleLabel.frame = NSRect(x: 16, y: 130, width: 288, height: 20)
+        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        addSubview(titleLabel)
 
-        field.frame = NSRect(x: 14, y: 74, width: 252, height: 24)
+        field.frame = NSRect(x: 16, y: 88, width: 288, height: 26)
         field.placeholderString = "记下待办…"
         field.font = .systemFont(ofSize: 14)
         addSubview(field)
 
-        addButton(title: "收集箱", action: #selector(submitInbox), x: 14)
-        addButton(title: "10 分钟", action: #selector(submitTenMinutes), x: 80)
-        addButton(title: "今晚", action: #selector(submitTonight), x: 146)
-        addButton(title: "明天", action: #selector(submitTomorrow), x: 212)
+        addButton(title: "收集箱", action: #selector(submitInbox), x: 16)
+        addButton(title: "10 分钟", action: #selector(submitTenMinutes), x: 88)
+        addButton(title: "今晚", action: #selector(submitTonight), x: 160)
+        addButton(title: "明天", action: #selector(submitTomorrow), x: 232)
     }
 
     required init?(coder: NSCoder) {
@@ -189,7 +201,7 @@ private final class CaptureView: NSView {
 
     private func addButton(title: String, action: Selector, x: CGFloat) {
         let button = NSButton(title: title, target: self, action: action)
-        button.frame = NSRect(x: x, y: 24, width: 58, height: 24)
+        button.frame = NSRect(x: x, y: 40, width: 66, height: 24)
         button.bezelStyle = .rounded
         button.font = .systemFont(ofSize: 11)
         addSubview(button)
