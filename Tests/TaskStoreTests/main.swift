@@ -78,6 +78,71 @@ func testRepositoryRestoresTasksAfterItIsReopened() throws {
     expect(secondLaunch.tasks == [createdTask], "tasks survive reopening the app")
 }
 
+func testCompletesAnInboxTask() throws {
+    let store = TaskStore()
+    let task = try store.create(title: "Review proposal")
+
+    let completedTask = store.complete(id: task.id)
+
+    expect(completedTask?.status == .completed, "completing a task moves it to Completed")
+    expect(store.tasks.first?.status == .completed, "the stored task is completed")
+}
+
+func testChangesACompletedTaskBackToInboxWhenItsReminderIsCleared() throws {
+    let store = TaskStore()
+    let task = try store.create(title: "Send notes", reminderAt: Date())
+    _ = store.complete(id: task.id)
+
+    let updatedTask = store.updateReminder(id: task.id, reminderAt: nil)
+
+    expect(updatedTask?.status == .inbox, "clearing a reminder returns a task to Inbox")
+    expect(updatedTask?.reminderAt == nil, "clearing a reminder removes its date")
+}
+
+func testChangesATaskToTodayWhenItReceivesAReminder() throws {
+    let store = TaskStore()
+    let task = try store.create(title: "Book flights")
+    let reminder = Date(timeIntervalSinceReferenceDate: 12_345)
+
+    let updatedTask = store.updateReminder(id: task.id, reminderAt: reminder)
+
+    expect(updatedTask?.status == .today, "adding a reminder moves a task to Today")
+    expect(updatedTask?.reminderAt == reminder, "the reminder is retained")
+}
+
+func testDeletesATaskAndPersistsTheRemoval() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("json")
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let repository = try TaskRepository(fileURL: fileURL)
+    let task = try repository.create(title: "Delete me")
+
+    let wasDeleted = try repository.delete(id: task.id)
+    expect(wasDeleted, "an existing task is deleted")
+    let reopenedRepository = try TaskRepository(fileURL: fileURL)
+    expect(reopenedRepository.tasks.isEmpty, "a deleted task does not return after reopening")
+}
+
+func testDeletesSelectedTasksAndPersistsTheRemoval() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("json")
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let repository = try TaskRepository(fileURL: fileURL)
+    let first = try repository.create(title: "First")
+    let second = try repository.create(title: "Second")
+    let third = try repository.create(title: "Third")
+
+    let deletedCount = try repository.delete(ids: Set([first.id, third.id]))
+    expect(deletedCount == 2, "all selected tasks are deleted")
+
+    let reopenedRepository = try TaskRepository(fileURL: fileURL)
+    expect(reopenedRepository.tasks == [second], "only unselected tasks remain after reopening")
+}
+
 func testSelectsTheOldestDueTask() {
     let now = Date(timeIntervalSinceReferenceDate: 10_000)
     let olderDueTask = Task(
@@ -139,6 +204,11 @@ do {
     try testPersistsCreatedTasksToDisk()
     testPlacesTheBirdInsideTheBottomRightScreenCorner()
     try testRepositoryRestoresTasksAfterItIsReopened()
+    try testCompletesAnInboxTask()
+    try testChangesACompletedTaskBackToInboxWhenItsReminderIsCleared()
+    try testChangesATaskToTodayWhenItReceivesAReminder()
+    try testDeletesATaskAndPersistsTheRemoval()
+    try testDeletesSelectedTasksAndPersistsTheRemoval()
     testSelectsTheOldestDueTask()
     testQuickReminderTimesArePredictable()
     print("TaskStore tests passed.")

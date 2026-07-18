@@ -83,6 +83,45 @@ final class TaskStore {
         tasks.append(task)
         return task
     }
+
+    @discardableResult
+    func complete(id: UUID) -> Task? {
+        update(id: id) { task in
+            task.status = .completed
+        }
+    }
+
+    @discardableResult
+    func updateReminder(id: UUID, reminderAt: Date?) -> Task? {
+        update(id: id) { task in
+            task.reminderAt = reminderAt
+            task.status = reminderAt == nil ? .inbox : .today
+        }
+    }
+
+    func delete(id: UUID) -> Bool {
+        guard let index = tasks.firstIndex(where: { $0.id == id }) else {
+            return false
+        }
+
+        tasks.remove(at: index)
+        return true
+    }
+
+    func delete(ids: Set<UUID>) -> Int {
+        let originalCount = tasks.count
+        tasks.removeAll { ids.contains($0.id) }
+        return originalCount - tasks.count
+    }
+
+    private func update(id: UUID, mutate: (inout Task) -> Void) -> Task? {
+        guard let index = tasks.firstIndex(where: { $0.id == id }) else {
+            return nil
+        }
+
+        mutate(&tasks[index])
+        return tasks[index]
+    }
 }
 
 final class TaskRepository {
@@ -103,6 +142,40 @@ final class TaskRepository {
         let task = try store.create(title: title, reminderAt: reminderAt)
         try persistence.save(store.tasks)
         return task
+    }
+
+    @discardableResult
+    func complete(id: UUID) throws -> Task? {
+        let task = store.complete(id: id)
+        if task != nil {
+            try persistence.save(store.tasks)
+        }
+        return task
+    }
+
+    @discardableResult
+    func updateReminder(id: UUID, reminderAt: Date?) throws -> Task? {
+        let task = store.updateReminder(id: id, reminderAt: reminderAt)
+        if task != nil {
+            try persistence.save(store.tasks)
+        }
+        return task
+    }
+
+    func delete(id: UUID) throws -> Bool {
+        let wasDeleted = store.delete(id: id)
+        if wasDeleted {
+            try persistence.save(store.tasks)
+        }
+        return wasDeleted
+    }
+
+    func delete(ids: Set<UUID>) throws -> Int {
+        let deletedCount = store.delete(ids: ids)
+        if deletedCount > 0 {
+            try persistence.save(store.tasks)
+        }
+        return deletedCount
     }
 }
 
