@@ -125,6 +125,19 @@ func testQuickReminderTimesArePredictable() {
     )
 }
 
+func testFirstLaunchShowsQuickCaptureOnlyWhenThereAreNoTasks() {
+    let task = Task(
+        id: UUID(),
+        title: "Existing task",
+        createdAt: .now,
+        reminderAt: nil,
+        status: .inbox
+    )
+
+    expect(AppLaunchPresentation.showsQuickCapture(for: []), "new users see quick capture")
+    expect(!AppLaunchPresentation.showsQuickCapture(for: [task]), "returning users keep an unobtrusive desktop bird")
+}
+
 do {
     try testCreatesAnInboxTaskFromAWhitespacePaddedTitle()
     testRejectsAnEmptyTaskTitle()
@@ -133,6 +146,7 @@ do {
     try testRepositoryRestoresTasksAfterItIsReopened()
     testSelectsTheOldestDueTask()
     testQuickReminderTimesArePredictable()
+    testFirstLaunchShowsQuickCaptureOnlyWhenThereAreNoTasks()
     print("TaskStore tests passed.")
 } catch {
     fatalError("Test failed: \(error)")

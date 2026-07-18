@@ -18,6 +18,10 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
 
         configureStatusItem()
         showBird()
+
+        if let taskRepository, AppLaunchPresentation.showsQuickCapture(for: taskRepository.tasks) {
+            showCapture()
+        }
     }
 
     @objc private func toggleBird() {
@@ -94,11 +98,13 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.level = .floating
-        panel.contentView = CaptureView(frame: NSRect(origin: .zero, size: captureSize)) { [weak self] title, reminder in
+        let captureView = CaptureView(frame: NSRect(origin: .zero, size: captureSize)) { [weak self] title, reminder in
             self?.createTask(title: title, reminder: reminder)
         }
+        panel.contentView = captureView
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        panel.makeFirstResponder(captureView.inputField)
         captureWindow = panel
     }
 
@@ -153,6 +159,10 @@ private final class BirdView: NSView {
 private final class CaptureView: NSView {
     private let field = NSTextField()
     private let onSubmit: (String, QuickReminder) -> Void
+
+    var inputField: NSTextField {
+        field
+    }
 
     init(frame frameRect: NSRect, onSubmit: @escaping (String, QuickReminder) -> Void) {
         self.onSubmit = onSubmit
