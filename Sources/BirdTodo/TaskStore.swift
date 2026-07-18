@@ -18,6 +18,28 @@ enum TaskStoreError: Error, Equatable {
     case emptyTitle
 }
 
+enum QuickReminder {
+    case none
+    case tenMinutes
+    case tonight
+    case tomorrow
+
+    func reminderDate(from now: Date = .now, calendar: Calendar = .current) -> Date? {
+        switch self {
+        case .none:
+            return nil
+        case .tenMinutes:
+            return now.addingTimeInterval(10 * 60)
+        case .tonight:
+            let tonight = calendar.date(bySettingHour: 19, minute: 0, second: 0, of: now)!
+            return tonight >= now ? tonight : calendar.date(byAdding: .day, value: 1, to: tonight)
+        case .tomorrow:
+            let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)!
+            return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow)
+        }
+    }
+}
+
 enum ReminderQueue {
     static func nextDueTask(from tasks: [Task], now: Date) -> Task? {
         tasks

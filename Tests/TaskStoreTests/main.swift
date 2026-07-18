@@ -103,6 +103,28 @@ func testSelectsTheOldestDueTask() {
     expect(nextTask == olderDueTask, "the oldest due task is shown first")
 }
 
+func testQuickReminderTimesArePredictable() {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+    let now = calendar.date(from: DateComponents(year: 2026, month: 7, day: 18, hour: 14, minute: 30))!
+
+    expect(
+        QuickReminder.tenMinutes.reminderDate(from: now, calendar: calendar)
+            == now.addingTimeInterval(600),
+        "ten-minute reminders use the current time"
+    )
+    expect(
+        QuickReminder.tonight.reminderDate(from: now, calendar: calendar)
+            == calendar.date(from: DateComponents(year: 2026, month: 7, day: 18, hour: 19)),
+        "tonight reminders use 19:00 today"
+    )
+    expect(
+        QuickReminder.tomorrow.reminderDate(from: now, calendar: calendar)
+            == calendar.date(from: DateComponents(year: 2026, month: 7, day: 19, hour: 9)),
+        "tomorrow reminders use 09:00 tomorrow"
+    )
+}
+
 do {
     try testCreatesAnInboxTaskFromAWhitespacePaddedTitle()
     testRejectsAnEmptyTaskTitle()
@@ -110,6 +132,7 @@ do {
     testPlacesTheBirdInsideTheBottomRightScreenCorner()
     try testRepositoryRestoresTasksAfterItIsReopened()
     testSelectsTheOldestDueTask()
+    testQuickReminderTimesArePredictable()
     print("TaskStore tests passed.")
 } catch {
     fatalError("Test failed: \(error)")

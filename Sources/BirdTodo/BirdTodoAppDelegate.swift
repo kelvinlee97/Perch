@@ -77,7 +77,7 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
     private func showCapture() {
         guard let birdWindow else { return }
 
-        let captureSize = CGSize(width: 280, height: 82)
+        let captureSize = CGSize(width: 280, height: 112)
         let frame = NSRect(
             x: birdWindow.frame.maxX - captureSize.width,
             y: birdWindow.frame.maxY + 10,
@@ -94,17 +94,17 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.level = .floating
-        panel.contentView = CaptureView(frame: NSRect(origin: .zero, size: captureSize)) { [weak self] title in
-            self?.createTask(title: title)
+        panel.contentView = CaptureView(frame: NSRect(origin: .zero, size: captureSize)) { [weak self] title, reminder in
+            self?.createTask(title: title, reminder: reminder)
         }
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         captureWindow = panel
     }
 
-    private func createTask(title: String) {
+    private func createTask(title: String, reminder: QuickReminder) {
         do {
-            _ = try taskRepository?.create(title: title)
+            _ = try taskRepository?.create(title: title, reminderAt: reminder.reminderDate())
             captureWindow?.orderOut(nil)
             captureWindow = nil
         } catch {
@@ -152,9 +152,9 @@ private final class BirdView: NSView {
 
 private final class CaptureView: NSView {
     private let field = NSTextField()
-    private let onSubmit: (String) -> Void
+    private let onSubmit: (String, QuickReminder) -> Void
 
-    init(frame frameRect: NSRect, onSubmit: @escaping (String) -> Void) {
+    init(frame frameRect: NSRect, onSubmit: @escaping (String, QuickReminder) -> Void) {
         self.onSubmit = onSubmit
         super.init(frame: frameRect)
 
@@ -162,22 +162,46 @@ private final class CaptureView: NSView {
         layer?.cornerRadius = 12
         layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.96).cgColor
 
-        field.frame = NSRect(x: 14, y: 39, width: 252, height: 24)
+        field.frame = NSRect(x: 14, y: 74, width: 252, height: 24)
         field.placeholderString = "记下待办…"
         field.font = .systemFont(ofSize: 14)
         addSubview(field)
 
-        let button = NSButton(title: "添加", target: self, action: #selector(submit))
-        button.frame = NSRect(x: 210, y: 10, width: 56, height: 24)
-        button.bezelStyle = .rounded
-        addSubview(button)
+        addButton(title: "收集箱", action: #selector(submitInbox), x: 14)
+        addButton(title: "10 分钟", action: #selector(submitTenMinutes), x: 80)
+        addButton(title: "今晚", action: #selector(submitTonight), x: 146)
+        addButton(title: "明天", action: #selector(submitTomorrow), x: 212)
     }
 
     required init?(coder: NSCoder) {
         nil
     }
 
-    @objc private func submit() {
-        onSubmit(field.stringValue)
+    private func addButton(title: String, action: Selector, x: CGFloat) {
+        let button = NSButton(title: title, target: self, action: action)
+        button.frame = NSRect(x: x, y: 24, width: 58, height: 24)
+        button.bezelStyle = .rounded
+        button.font = .systemFont(ofSize: 11)
+        addSubview(button)
+    }
+
+    @objc private func submitInbox() {
+        submit(.none)
+    }
+
+    @objc private func submitTenMinutes() {
+        submit(.tenMinutes)
+    }
+
+    @objc private func submitTonight() {
+        submit(.tonight)
+    }
+
+    @objc private func submitTomorrow() {
+        submit(.tomorrow)
+    }
+
+    private func submit(_ reminder: QuickReminder) {
+        onSubmit(field.stringValue, reminder)
     }
 }
