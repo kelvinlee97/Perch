@@ -54,11 +54,11 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let menu = NSMenu()
-        menu.addItem(withTitle: "New Task", action: #selector(showQuickCapture), keyEquivalent: "n")
+        menu.addItem(withTitle: "新建待办", action: #selector(showQuickCapture), keyEquivalent: "n")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Show Bird", action: #selector(toggleBird), keyEquivalent: "")
+        menu.addItem(withTitle: "显示小鸟", action: #selector(toggleBird), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit Bird Todo", action: #selector(quit), keyEquivalent: "q")
+        menu.addItem(withTitle: "退出 Bird Todo", action: #selector(quit), keyEquivalent: "q")
         item.menu = menu
         statusItem = item
     }
@@ -152,6 +152,7 @@ private final class BirdView: NSView {
         addSubview(imageView)
         setAccessibilityRole(.button)
         setAccessibilityLabel("New Task")
+        toolTip = "点击新建待办"
     }
 
     required init?(coder: NSCoder) {
@@ -179,7 +180,7 @@ private final class CaptureView: NSView {
         self.onSubmit = onSubmit
         super.init(frame: frameRect)
 
-        let titleLabel = NSTextField(labelWithString: "What needs your attention?")
+        let titleLabel = NSTextField(labelWithString: "记下你要做的事")
         titleLabel.frame = NSRect(x: 16, y: 130, width: 288, height: 20)
         titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         addSubview(titleLabel)
@@ -187,6 +188,8 @@ private final class CaptureView: NSView {
         field.frame = NSRect(x: 16, y: 88, width: 288, height: 26)
         field.placeholderString = "记下待办…"
         field.font = .systemFont(ofSize: 14)
+        field.target = self
+        field.action = #selector(submitInbox)
         addSubview(field)
 
         addButton(title: "收集箱", action: #selector(submitInbox), x: 16)
