@@ -21,6 +21,10 @@ enum TaskStoreError: Error, Equatable {
 final class TaskStore {
     private(set) var tasks: [Task] = []
 
+    init(tasks: [Task] = []) {
+        self.tasks = tasks
+    }
+
     @discardableResult
     func create(title: String, reminderAt: Date? = nil) throws -> Task {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -36,6 +40,27 @@ final class TaskStore {
             status: reminderAt == nil ? .inbox : .today
         )
         tasks.append(task)
+        return task
+    }
+}
+
+final class TaskRepository {
+    private let persistence: TaskFileStore
+    private let store: TaskStore
+
+    var tasks: [Task] {
+        store.tasks
+    }
+
+    init(fileURL: URL) throws {
+        persistence = TaskFileStore(fileURL: fileURL)
+        store = TaskStore(tasks: try persistence.load())
+    }
+
+    @discardableResult
+    func create(title: String, reminderAt: Date? = nil) throws -> Task {
+        let task = try store.create(title: title, reminderAt: reminderAt)
+        try persistence.save(store.tasks)
         return task
     }
 }

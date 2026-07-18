@@ -58,11 +58,25 @@ func testPlacesTheBirdInsideTheBottomRightScreenCorner() {
     expect(frame.origin == CGPoint(x: 1352, y: 24), "bird is inset from the bottom-right edge")
 }
 
+func testRepositoryRestoresTasksAfterItIsReopened() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("json")
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let firstLaunch = try TaskRepository(fileURL: fileURL)
+    let createdTask = try firstLaunch.create(title: "Prepare slides")
+    let secondLaunch = try TaskRepository(fileURL: fileURL)
+
+    expect(secondLaunch.tasks == [createdTask], "tasks survive reopening the app")
+}
+
 do {
     try testCreatesAnInboxTaskFromAWhitespacePaddedTitle()
     testRejectsAnEmptyTaskTitle()
     try testPersistsCreatedTasksToDisk()
     testPlacesTheBirdInsideTheBottomRightScreenCorner()
+    try testRepositoryRestoresTasksAfterItIsReopened()
     print("TaskStore tests passed.")
 } catch {
     fatalError("Test failed: \(error)")
