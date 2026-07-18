@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 func expect(_ condition: @autoclosure () -> Bool, _ message: String) {
     guard condition() else {
@@ -45,10 +46,23 @@ func testPersistsCreatedTasksToDisk() throws {
     expect(restoredTasks == [task], "saved tasks are restored")
 }
 
+func testPlacesTheBirdInsideTheBottomRightScreenCorner() {
+    let screenFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
+
+    let frame = BirdWindowLayout.frame(
+        in: screenFrame,
+        size: CGSize(width: 64, height: 64),
+        corner: .bottomRight
+    )
+
+    expect(frame.origin == CGPoint(x: 1352, y: 24), "bird is inset from the bottom-right edge")
+}
+
 do {
     try testCreatesAnInboxTaskFromAWhitespacePaddedTitle()
     testRejectsAnEmptyTaskTitle()
     try testPersistsCreatedTasksToDisk()
+    testPlacesTheBirdInsideTheBottomRightScreenCorner()
     print("TaskStore tests passed.")
 } catch {
     fatalError("Test failed: \(error)")
