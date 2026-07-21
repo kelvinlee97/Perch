@@ -15,6 +15,7 @@ app_path="$temp_dir/release/BirdTodo.app"
 [[ -x "$app_path/Contents/MacOS/BirdTodo" ]]
 [[ "$(plutil -extract CFBundleIdentifier raw "$app_path/Contents/Info.plist")" == "com.example.birdtodo" ]]
 [[ "$(plutil -extract CFBundlePackageType raw "$app_path/Contents/Info.plist")" == "APPL" ]]
+[[ "$(plutil -extract LSMultipleInstancesProhibited raw "$app_path/Contents/Info.plist")" == "true" ]]
 plutil -lint "$app_path/Contents/Info.plist" >/dev/null
 codesign --verify --deep --strict "$app_path"
 

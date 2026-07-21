@@ -51,7 +51,7 @@ Build a local-first macOS desktop companion for capturing short to-dos and gentl
 ### Phase 1: Prove the core loop
 
 - [ ] Task 1: Create the macOS shell with a menu-bar entry and transparent bird window.
-- [ ] Task 2: Add a local task model and persistence layer.
+- [x] Task 2: Add a local task model and persistence layer.
 - [ ] Task 3: Implement quick capture and create an inbox task.
 
 ### Checkpoint: Capture

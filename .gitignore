@@ -1,4 +1,5 @@
 .build/
+.build-cache-before-rename-*/
 .DS_Store
 DerivedData/
 release/

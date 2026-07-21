@@ -2,7 +2,8 @@ import AppKit
 
 final class BirdWidgetButton: NSButton {
     private let birdImage = NSImage(
-        contentsOf: Bundle.module.url(forResource: "bird-companion", withExtension: "png")!
+        contentsOf: Bundle.main.url(forResource: "bird-companion", withExtension: "png")
+            ?? Bundle.module.url(forResource: "bird-companion", withExtension: "png")!
     )!
     private var trackingArea: NSTrackingArea?
     private var animationTimer: Timer?
@@ -68,7 +69,6 @@ final class BirdWidgetButton: NSButton {
         context?.translateBy(x: -bounds.midX, y: -bounds.midY)
 
         let inset: CGFloat = isHovering ? 2 : 4
-        NSBezierPath(ovalIn: bounds.insetBy(dx: inset, dy: inset)).addClip()
         birdImage.draw(
             in: bounds.insetBy(dx: inset, dy: inset),
             from: NSRect(origin: .zero, size: birdImage.size),

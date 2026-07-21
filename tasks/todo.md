@@ -19,12 +19,14 @@
 
 ## Task 2: Local task persistence
 
+**Status:** Implementation complete; manual verification remains.
+
 **Description:** Define a task record with title, optional reminder time, status, and creation time; persist it locally.
 
 **Acceptance criteria:**
-- [ ] A newly created task survives an app restart.
-- [ ] Completed tasks remain available in the Completed section.
-- [ ] Deleting a task removes it permanently.
+- [x] A newly created task survives an app restart.
+- [x] Completed tasks remain available in the Completed section.
+- [x] Deleting a task removes it permanently.
 
 **Verification:**
 - [ ] Manual check: create, restart, complete, and delete tasks.

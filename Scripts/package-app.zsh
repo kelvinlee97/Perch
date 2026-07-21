@@ -17,8 +17,9 @@ fi
 
 swift build -c release --build-path "$build_dir"
 
-install -d "$app_path/Contents/MacOS"
+install -d "$app_path/Contents/MacOS" "$app_path/Contents/Resources"
 install -m 755 "$build_dir/release/BirdTodo" "$app_path/Contents/MacOS/BirdTodo"
+install -m 644 "$root_dir/Sources/BirdTodo/Assets/bird-companion.png" "$app_path/Contents/Resources/bird-companion.png"
 cp "$root_dir/App/Info.plist" "$app_path/Contents/Info.plist"
 plutil -replace CFBundleIdentifier -string "$bundle_id" "$app_path/Contents/Info.plist"
 plutil -replace CFBundleShortVersionString -string "$version" "$app_path/Contents/Info.plist"

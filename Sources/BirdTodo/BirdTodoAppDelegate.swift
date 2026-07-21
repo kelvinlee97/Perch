@@ -5,8 +5,11 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private let birdSize = CGSize(width: 88, height: 88)
     private var birdWindow: NSPanel?
     private var workspaceWindow: NSPanel?
+    private var settingsWindow: NSPanel?
     private var statusItem: NSStatusItem?
     private var taskRepository: TaskRepository?
+    private let shortcutStore = ShortcutStore()
+    private var shortcutMenuItems: [ShortcutAction: [NSMenuItem]] = [:]
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
@@ -31,6 +34,8 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     func windowWillClose(_ notification: Notification) {
         if notification.object as? NSWindow === workspaceWindow {
             workspaceWindow = nil
+        } else if notification.object as? NSWindow === settingsWindow {
+            settingsWindow = nil
         }
         showBird()
     }
@@ -43,6 +48,50 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         showWorkspace()
     }
 
+    @objc private func closeWorkspace() {
+        workspaceWindow?.close()
+    }
+
+    @objc private func showSettings() {
+        if let settingsWindow {
+            settingsWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let size = CGSize(width: 440, height: 430)
+        let panel = NSPanel(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.titled, .closable, .utilityWindow],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = "设置"
+        panel.isReleasedWhenClosed = false
+        panel.delegate = self
+        panel.contentView = ShortcutSettingsView(
+            frame: NSRect(origin: .zero, size: size),
+            shortcutStore: shortcutStore,
+            onShortcutsChanged: { [weak self] in self?.updateShortcutMenuItems() }
+        )
+        panel.center()
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        settingsWindow = panel
+    }
+
+    @objc private func showInbox() {
+        showWorkspace(section: .inbox)
+    }
+
+    @objc private func showToday() {
+        showWorkspace(section: .today)
+    }
+
+    @objc private func showCompleted() {
+        showWorkspace(section: .completed)
+    }
+
     private func configureStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(
@@ -51,14 +100,75 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         )
 
         let menu = NSMenu()
-        menu.addItem(withTitle: "新建待办", action: #selector(showQuickCapture), keyEquivalent: "n")
+        addShortcutMenuItem(.newTask, to: menu)
         menu.addItem(withTitle: "显示待办", action: #selector(showQuickCapture), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "小鸟回到右下角", action: #selector(showBirdFromMenu), keyEquivalent: "")
+        menu.addItem(withTitle: "设置…", action: #selector(showSettings), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "退出 Bird Todo", action: #selector(quit), keyEquivalent: "q")
+        addShortcutMenuItem(.quit, to: menu)
         item.menu = menu
         statusItem = item
+        configureMainMenu()
+        updateShortcutMenuItems()
+    }
+
+    private func configureMainMenu() {
+        let mainMenu = NSMenu()
+        let appMenuItem = NSMenuItem()
+        let appMenu = NSMenu(title: "Bird Todo")
+        appMenu.addItem(withTitle: "关于 Bird Todo", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        addShortcutMenuItem(.settings, to: appMenu)
+        appMenu.addItem(.separator())
+        addShortcutMenuItem(.quit, to: appMenu)
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+
+        let fileMenuItem = NSMenuItem()
+        let fileMenu = NSMenu(title: "文件")
+        addShortcutMenuItem(.newTask, to: fileMenu)
+        addShortcutMenuItem(.closeWindow, to: fileMenu)
+        fileMenuItem.submenu = fileMenu
+        mainMenu.addItem(fileMenuItem)
+
+        let viewMenuItem = NSMenuItem()
+        let viewMenu = NSMenu(title: "查看")
+        addShortcutMenuItem(.inbox, to: viewMenu)
+        addShortcutMenuItem(.today, to: viewMenu)
+        addShortcutMenuItem(.completed, to: viewMenu)
+        viewMenuItem.submenu = viewMenu
+        mainMenu.addItem(viewMenuItem)
+        NSApp.mainMenu = mainMenu
+    }
+
+    private func addShortcutMenuItem(_ action: ShortcutAction, to menu: NSMenu) {
+        let item = NSMenuItem(title: action.title, action: selector(for: action), keyEquivalent: "")
+        item.target = self
+        menu.addItem(item)
+        shortcutMenuItems[action, default: []].append(item)
+    }
+
+    private func updateShortcutMenuItems() {
+        ShortcutAction.allCases.forEach { action in
+            let shortcut = shortcutStore.shortcut(for: action)
+            shortcutMenuItems[action]?.forEach { item in
+                item.keyEquivalent = shortcut.key
+                item.keyEquivalentModifierMask = shortcut.modifierFlags
+            }
+        }
+    }
+
+    private func selector(for action: ShortcutAction) -> Selector {
+        switch action {
+        case .newTask: #selector(showQuickCapture)
+        case .closeWindow: #selector(closeWorkspace)
+        case .quit: #selector(quit)
+        case .settings: #selector(showSettings)
+        case .inbox: #selector(showInbox)
+        case .today: #selector(showToday)
+        case .completed: #selector(showCompleted)
+        }
     }
 
     private func showBird() {
@@ -95,11 +205,16 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         showBird()
     }
 
-    private func showWorkspace() {
+    private func showWorkspace(section: TodoWorkspaceView.Section? = nil) {
         if let workspaceWindow {
             workspaceWindow.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
-            (workspaceWindow.contentView as? TodoWorkspaceView)?.focusInput()
+            let workspaceView = workspaceWindow.contentView as? TodoWorkspaceView
+            if let section {
+                workspaceView?.select(section: section)
+            } else {
+                workspaceView?.focusInput()
+            }
             return
         }
 
@@ -133,6 +248,9 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             },
             onDeleteMany: { [weak self] ids in
                 self?.deleteTasks(ids: ids)
+            },
+            onOpenSettings: { [weak self] in
+                self?.showSettings()
             }
         )
         panel.contentView = workspaceView
@@ -140,7 +258,11 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         birdWindow?.orderFrontRegardless()
-        workspaceView.focusInput()
+        if let section {
+            workspaceView.select(section: section)
+        } else {
+            workspaceView.focusInput()
+        }
         workspaceWindow = panel
     }
 
@@ -212,7 +334,7 @@ private final class BirdPanel: NSPanel {
 }
 
 private final class TodoWorkspaceView: NSView {
-    private enum Section: CaseIterable {
+    fileprivate enum Section: CaseIterable {
         case inbox
         case today
         case completed
@@ -248,6 +370,7 @@ private final class TodoWorkspaceView: NSView {
     private let onUpdateReminder: (UUID, QuickReminder) -> String?
     private let onDelete: (UUID) -> String?
     private let onDeleteMany: (Set<UUID>) -> String?
+    private let onOpenSettings: () -> Void
     private let inputField = NSTextField()
     private let messageLabel = NSTextField(labelWithString: "")
     private let titleLabel = NSTextField(labelWithString: "")
@@ -269,7 +392,8 @@ private final class TodoWorkspaceView: NSView {
         onComplete: @escaping (UUID) -> String?,
         onUpdateReminder: @escaping (UUID, QuickReminder) -> String?,
         onDelete: @escaping (UUID) -> String?,
-        onDeleteMany: @escaping (Set<UUID>) -> String?
+        onDeleteMany: @escaping (Set<UUID>) -> String?,
+        onOpenSettings: @escaping () -> Void
     ) {
         taskProvider = tasks
         self.onCreate = onCreate
@@ -277,6 +401,7 @@ private final class TodoWorkspaceView: NSView {
         self.onUpdateReminder = onUpdateReminder
         self.onDelete = onDelete
         self.onDeleteMany = onDeleteMany
+        self.onOpenSettings = onOpenSettings
         super.init(frame: frameRect)
         buildInterface()
         refresh()
@@ -287,6 +412,11 @@ private final class TodoWorkspaceView: NSView {
     func focusInput() {
         messageLabel.stringValue = ""
         window?.makeFirstResponder(inputField)
+    }
+
+    func select(section: Section) {
+        selectedSection = section
+        refresh()
     }
 
     private func buildInterface() {
@@ -443,8 +573,8 @@ private final class TodoWorkspaceView: NSView {
             brand.topAnchor.constraint(equalTo: sidebar.topAnchor, constant: 26),
             brandImage.widthAnchor.constraint(equalToConstant: 18),
             brandImage.heightAnchor.constraint(equalToConstant: 18),
-            navigation.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 16),
-            navigation.topAnchor.constraint(equalTo: brand.bottomAnchor, constant: 28),
+        navigation.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 16),
+        navigation.topAnchor.constraint(equalTo: brand.bottomAnchor, constant: 28),
             titleLabel.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 28),
             titleLabel.topAnchor.constraint(equalTo: content.topAnchor, constant: 30),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: batchDeleteButton.leadingAnchor, constant: -12),
@@ -472,6 +602,31 @@ private final class TodoWorkspaceView: NSView {
             taskStack.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
             taskStack.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor)
         ])
+
+        let settingsButton = NSButton(
+            title: "设置…",
+            image: NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil) ?? NSImage(),
+            target: self,
+            action: #selector(openSettings)
+        )
+        settingsButton.imagePosition = .imageLeading
+        settingsButton.bezelStyle = .inline
+        settingsButton.isBordered = false
+        settingsButton.alignment = .left
+        settingsButton.font = .systemFont(ofSize: 13, weight: .medium)
+        settingsButton.contentTintColor = .secondaryLabelColor
+        settingsButton.translatesAutoresizingMaskIntoConstraints = false
+        sidebar.addSubview(settingsButton)
+        NSLayoutConstraint.activate([
+            settingsButton.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 16),
+            settingsButton.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor, constant: -20),
+            settingsButton.widthAnchor.constraint(equalToConstant: 156),
+            settingsButton.heightAnchor.constraint(equalToConstant: 32)
+        ])
+    }
+
+    @objc private func openSettings() {
+        onOpenSettings()
     }
 
     private func addQuickAction(title: String, reminder: QuickReminder, to stack: NSStackView) {
@@ -503,7 +658,7 @@ private final class TodoWorkspaceView: NSView {
         if !isSelecting {
             selectedTaskIDs.removeAll()
         }
-        selectionButton.title = isSelecting ? "完成" : "选择"
+        selectionButton.title = isSelecting ? "完成选择" : "选择"
         batchDeleteButton.isHidden = !isSelecting
         selectAllButton.isHidden = !isSelecting
         updateBatchDeleteButton()
@@ -706,13 +861,16 @@ private final class TaskRowView: NSView {
         let completeButton = NSButton(
             image: NSImage(
                 systemSymbolName: isSelecting ? (isSelected ? "checkmark.circle.fill" : "circle") : (task.status == .completed ? "checkmark.circle.fill" : "circle"),
-                accessibilityDescription: isSelecting ? "选择待办" : "完成待办"
+                accessibilityDescription: isSelecting
+                    ? "选择待办"
+                    : (task.status == .completed ? "已完成" : "完成待办")
             ) ?? NSImage(),
             target: self,
             action: #selector(performPrimaryAction)
         )
         completeButton.bezelStyle = .inline
         completeButton.contentTintColor = task.status == .completed ? .controlAccentColor : .secondaryLabelColor
+        completeButton.isEnabled = task.status != .completed
         completeButton.isHidden = isSelecting
         completeButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(completeButton)
@@ -815,5 +973,14 @@ private final class TaskRowView: NSView {
     @objc private func remindInTenMinutes() { onUpdateReminder(task.id, .tenMinutes) }
     @objc private func remindTonight() { onUpdateReminder(task.id, .tonight) }
     @objc private func remindTomorrow() { onUpdateReminder(task.id, .tomorrow) }
-    @objc private func deleteTask() { onDelete(task.id) }
+    @objc private func deleteTask() {
+        let alert = NSAlert()
+        alert.messageText = "删除这项待办？"
+        alert.informativeText = "此操作无法撤销。"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "删除")
+        alert.addButton(withTitle: "取消")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        onDelete(task.id)
+    }
 }
