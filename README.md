@@ -28,12 +28,6 @@ Perch takes a calmer approach: **make capture effortless, keep tasks local, and 
 
 ## A bird that stays out of the way
 
-<p align="center">
-  <img src="./docs/images/perch-idle.png" width="420" alt="Perch in its resting desktop state" />
-</p>
-
-<p align="center"><em>Perch in its resting state—nearby when needed, quiet when not.</em></p>
-
 The bird rests in the corner of your desktop without taking over your workspace. It is a visual anchor for the things you do not want to keep carrying in your head.
 
 ## What you can do today
