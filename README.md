@@ -76,7 +76,19 @@ The script creates or replaces:
 release/Perch.app
 ```
 
-The local build is ad hoc signed so macOS can verify that the bundle is internally consistent. Open it from Finder or move it to `/Applications`.
+Open the local build directly:
+
+```zsh
+open release/Perch.app
+```
+
+To build and open Perch in one step:
+
+```zsh
+PERCH_BUNDLE_ID=com.example.perch zsh Scripts/package-app.zsh && open release/Perch.app
+```
+
+The script does not install Perch in `/Applications`. Move the app there manually if you want to open it from Spotlight or Launchpad. The local build is ad hoc signed so macOS can verify that the bundle is internally consistent.
 
 > [!NOTE]
 > This build is intended for local development and testing. It is not yet Developer ID-signed or notarized for public distribution.
