@@ -81,26 +81,6 @@ The local build is ad hoc signed so macOS can verify that the bundle is internal
 > [!NOTE]
 > This build is intended for local development and testing. It is not yet Developer ID-signed or notarized for public distribution.
 
-## Run the checks
-
-Build the Swift package:
-
-```zsh
-swift build
-```
-
-Verify the packaged app:
-
-```zsh
-zsh Tests/test-app-bundle.zsh
-```
-
-Verify that only one Perch instance can run at a time:
-
-```zsh
-zsh Tests/test-single-instance.zsh
-```
-
 ## Public release checklist
 
 Before Perch can be offered as a public download:
