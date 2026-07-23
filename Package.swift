@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "BirdTodo",
+    name: "Perch",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "BirdTodo", targets: ["BirdTodo"]),
+        .executable(name: "Perch", targets: ["Perch"]),
     ],
     targets: [
         .executableTarget(
-            name: "BirdTodo",
+            name: "Perch",
             resources: [.process("Assets")]
         ),
     ]

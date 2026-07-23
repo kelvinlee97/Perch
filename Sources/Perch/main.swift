@@ -6,7 +6,7 @@ guard instanceLock.acquire() else {
 }
 
 let application = NSApplication.shared
-let appDelegate = BirdTodoAppDelegate()
+let appDelegate = PerchAppDelegate()
 
 application.delegate = appDelegate
 application.setActivationPolicy(.accessory)

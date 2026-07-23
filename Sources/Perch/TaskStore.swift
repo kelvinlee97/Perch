@@ -92,6 +92,13 @@ final class TaskStore {
     }
 
     @discardableResult
+    func restore(id: UUID) -> Task? {
+        update(id: id) { task in
+            task.status = task.reminderAt == nil ? .inbox : .today
+        }
+    }
+
+    @discardableResult
     func updateReminder(id: UUID, reminderAt: Date?) -> Task? {
         update(id: id) { task in
             task.reminderAt = reminderAt
@@ -147,6 +154,15 @@ final class TaskRepository {
     @discardableResult
     func complete(id: UUID) throws -> Task? {
         let task = store.complete(id: id)
+        if task != nil {
+            try persistence.save(store.tasks)
+        }
+        return task
+    }
+
+    @discardableResult
+    func restore(id: UUID) throws -> Task? {
+        let task = store.restore(id: id)
         if task != nil {
             try persistence.save(store.tasks)
         }

@@ -13,7 +13,7 @@ enum ShortcutAction: String, CaseIterable, Codable {
         switch self {
         case .newTask: "新建待办"
         case .closeWindow: "关闭待办窗口"
-        case .quit: "退出 Bird Todo"
+        case .quit: "退出 Perch"
         case .settings: "打开设置"
         case .inbox: "切换到收集箱"
         case .today: "切换到今天"
@@ -121,7 +121,7 @@ final class ShortcutSettingsView: NSView {
         title.translatesAutoresizingMaskIntoConstraints = false
         addSubview(title)
 
-        let explanation = NSTextField(wrappingLabelWithString: "点击快捷键后按下新的组合键。快捷键只在 Bird Todo 位于前台时生效。")
+        let explanation = NSTextField(wrappingLabelWithString: "点击快捷键后按下新的组合键。快捷键只在 Perch 位于前台时生效。")
         explanation.font = .systemFont(ofSize: 13)
         explanation.textColor = .secondaryLabelColor
         explanation.translatesAutoresizingMaskIntoConstraints = false

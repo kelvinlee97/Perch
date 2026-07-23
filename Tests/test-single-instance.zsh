@@ -14,7 +14,7 @@ cleanup() {
 trap cleanup EXIT
 
 swift build --build-path "$temp_dir/build"
-binary="$temp_dir/build/debug/BirdTodo"
+binary="$temp_dir/build/debug/Perch"
 
 "$binary" &
 first_pid=$!
@@ -26,7 +26,7 @@ second_pid=$!
 sleep 1
 
 if kill -0 "$second_pid" 2>/dev/null; then
-    print -u2 "A second BirdTodo instance is still running."
+    print -u2 "A second Perch instance is still running."
     exit 1
 fi
 

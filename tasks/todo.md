@@ -1,4 +1,4 @@
-# Bird Todo MVP Task Checklist
+# Perch MVP Task Checklist
 
 ## Task 1: macOS shell and resting bird
 

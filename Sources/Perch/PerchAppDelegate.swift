@@ -1,7 +1,7 @@
 import AppKit
 
 @MainActor
-final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let birdSize = CGSize(width: 88, height: 88)
     private var birdWindow: NSPanel?
     private var workspaceWindow: NSPanel?
@@ -96,7 +96,7 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(
             systemSymbolName: "bird.fill",
-            accessibilityDescription: "Bird Todo"
+            accessibilityDescription: "Perch"
         )
 
         let menu = NSMenu()
@@ -116,8 +116,8 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
     private func configureMainMenu() {
         let mainMenu = NSMenu()
         let appMenuItem = NSMenuItem()
-        let appMenu = NSMenu(title: "Bird Todo")
-        appMenu.addItem(withTitle: "关于 Bird Todo", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let appMenu = NSMenu(title: "Perch")
+        appMenu.addItem(withTitle: "关于 Perch", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
         addShortcutMenuItem(.settings, to: appMenu)
         appMenu.addItem(.separator())
@@ -193,7 +193,7 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         let button = BirdWidgetButton(frame: NSRect(origin: .zero, size: birdSize))
-        button.toolTip = "打开 Bird Todo"
+        button.toolTip = "打开 Perch"
         button.target = self
         button.action = #selector(showQuickCapture)
         panel.contentView = button
@@ -221,11 +221,11 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         let size = CGSize(width: 720, height: 560)
         let panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.titled, .closable, .utilityWindow],
+            styleMask: [.titled, .closable, .resizable, .utilityWindow],
             backing: .buffered,
             defer: false
         )
-        panel.title = "Bird Todo"
+        panel.title = "Perch"
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
@@ -239,6 +239,9 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             },
             onComplete: { [weak self] id in
                 self?.completeTask(id: id)
+            },
+            onRestore: { [weak self] id in
+                self?.restoreTask(id: id)
             },
             onUpdateReminder: { [weak self] id, reminder in
                 self?.updateReminder(id: id, reminder: reminder)
@@ -289,6 +292,15 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
         }
     }
 
+    private func restoreTask(id: UUID) -> String? {
+        do {
+            _ = try taskRepository?.restore(id: id)
+            return nil
+        } catch {
+            return "无法恢复待办，请稍后再试。"
+        }
+    }
+
     private func updateReminder(id: UUID, reminder: QuickReminder) -> String? {
         do {
             _ = try taskRepository?.updateReminder(id: id, reminderAt: reminder.reminderDate())
@@ -322,7 +334,7 @@ final class BirdTodoAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelega
             in: .userDomainMask,
             appropriateFor: nil,
             create: true
-        ).appendingPathComponent("BirdTodo", isDirectory: true)
+        ).appendingPathComponent("Perch", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory.appendingPathComponent("tasks.json")
     }
@@ -367,6 +379,7 @@ private final class TodoWorkspaceView: NSView {
     private let taskProvider: () -> [Task]
     private let onCreate: (String, QuickReminder) -> String?
     private let onComplete: (UUID) -> String?
+    private let onRestore: (UUID) -> String?
     private let onUpdateReminder: (UUID, QuickReminder) -> String?
     private let onDelete: (UUID) -> String?
     private let onDeleteMany: (Set<UUID>) -> String?
@@ -374,6 +387,7 @@ private final class TodoWorkspaceView: NSView {
     private let inputField = NSTextField()
     private let messageLabel = NSTextField(labelWithString: "")
     private let titleLabel = NSTextField(labelWithString: "")
+    private let subtitleLabel = NSTextField(labelWithString: "")
     private let taskStack = TaskListStackView()
     private let completedVisibilityButton = NSButton()
     private let selectionButton = NSButton()
@@ -384,12 +398,17 @@ private final class TodoWorkspaceView: NSView {
     private var areCompletedHidden = false
     private var isSelecting = false
     private var selectedTaskIDs = Set<UUID>()
+    private var selectedReminder: QuickReminder = .none
+    private var reminderButtons: [Int: NSButton] = [:]
+    private let companionMessage = NSTextField(wrappingLabelWithString: "")
+    private var companionTimer: Timer?
 
     init(
         frame frameRect: NSRect,
         tasks: @escaping () -> [Task],
         onCreate: @escaping (String, QuickReminder) -> String?,
         onComplete: @escaping (UUID) -> String?,
+        onRestore: @escaping (UUID) -> String?,
         onUpdateReminder: @escaping (UUID, QuickReminder) -> String?,
         onDelete: @escaping (UUID) -> String?,
         onDeleteMany: @escaping (Set<UUID>) -> String?,
@@ -398,6 +417,7 @@ private final class TodoWorkspaceView: NSView {
         taskProvider = tasks
         self.onCreate = onCreate
         self.onComplete = onComplete
+        self.onRestore = onRestore
         self.onUpdateReminder = onUpdateReminder
         self.onDelete = onDelete
         self.onDeleteMany = onDeleteMany
@@ -405,9 +425,17 @@ private final class TodoWorkspaceView: NSView {
         super.init(frame: frameRect)
         buildInterface()
         refresh()
+        startCompanionMessages()
     }
 
     required init?(coder: NSCoder) { nil }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil {
+            companionTimer?.invalidate()
+        }
+        super.viewWillMove(toWindow: newWindow)
+    }
 
     func focusInput() {
         messageLabel.stringValue = ""
@@ -445,7 +473,7 @@ private final class TodoWorkspaceView: NSView {
         brandImage.image = NSImage(systemSymbolName: "bird.fill", accessibilityDescription: nil)
         brandImage.contentTintColor = NSColor(calibratedRed: 0.16, green: 0.34, blue: 0.26, alpha: 1)
         brandImage.translatesAutoresizingMaskIntoConstraints = false
-        let brandTitle = NSTextField(labelWithString: "Bird Todo")
+        let brandTitle = NSTextField(labelWithString: "Perch")
         brandTitle.font = .systemFont(ofSize: 15, weight: .semibold)
         let brand = NSStackView(views: [brandImage, brandTitle])
         brand.orientation = .horizontal
@@ -491,6 +519,11 @@ private final class TodoWorkspaceView: NSView {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(titleLabel)
 
+        subtitleLabel.font = .systemFont(ofSize: 12)
+        subtitleLabel.textColor = .secondaryLabelColor
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        content.addSubview(subtitleLabel)
+
         selectionButton.title = "选择"
         selectionButton.target = self
         selectionButton.action = #selector(toggleSelectionMode)
@@ -515,10 +548,12 @@ private final class TodoWorkspaceView: NSView {
         batchDeleteButton.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(batchDeleteButton)
 
-        inputField.placeholderString = "记下待办…"
+        inputField.placeholderString = "现在想记下什么？"
         inputField.font = .systemFont(ofSize: 15)
         inputField.target = self
         inputField.action = #selector(createInboxTask)
+        inputField.setAccessibilityLabel("新待办")
+        inputField.setAccessibilityHelp("输入内容，选择提醒时间，然后按回车添加")
         inputField.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(inputField)
 
@@ -540,6 +575,7 @@ private final class TodoWorkspaceView: NSView {
 
         messageLabel.font = .systemFont(ofSize: 12)
         messageLabel.textColor = .systemRed
+        messageLabel.setAccessibilityLabel("操作反馈")
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(messageLabel)
 
@@ -578,6 +614,8 @@ private final class TodoWorkspaceView: NSView {
             titleLabel.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 28),
             titleLabel.topAnchor.constraint(equalTo: content.topAnchor, constant: 30),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: batchDeleteButton.leadingAnchor, constant: -12),
+            subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 3),
             selectionButton.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -28),
             selectionButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
             selectAllButton.trailingAnchor.constraint(equalTo: selectionButton.leadingAnchor, constant: -8),
@@ -585,8 +623,8 @@ private final class TodoWorkspaceView: NSView {
             batchDeleteButton.trailingAnchor.constraint(equalTo: selectAllButton.leadingAnchor, constant: -8),
             batchDeleteButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
             inputField.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 28),
-            inputField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
-            inputField.heightAnchor.constraint(equalToConstant: 32),
+            inputField.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 18),
+            inputField.heightAnchor.constraint(equalToConstant: 34),
             addButton.leadingAnchor.constraint(equalTo: inputField.trailingAnchor, constant: 8),
             addButton.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -28),
             addButton.centerYAnchor.constraint(equalTo: inputField.centerYAnchor),
@@ -617,7 +655,31 @@ private final class TodoWorkspaceView: NSView {
         settingsButton.contentTintColor = .secondaryLabelColor
         settingsButton.translatesAutoresizingMaskIntoConstraints = false
         sidebar.addSubview(settingsButton)
+
+        let companionImage = NSImageView()
+        companionImage.image = NSImage(
+            contentsOf: Bundle.main.url(forResource: "bird-companion", withExtension: "png")
+                ?? Bundle.module.url(forResource: "bird-companion", withExtension: "png")!
+        )
+        companionImage.imageScaling = .scaleProportionallyUpOrDown
+        companionImage.setAccessibilityLabel("Perch 小伙伴")
+        companionImage.translatesAutoresizingMaskIntoConstraints = false
+        sidebar.addSubview(companionImage)
+
+        companionMessage.font = .systemFont(ofSize: 12, weight: .medium)
+        companionMessage.textColor = .secondaryLabelColor
+        companionMessage.maximumNumberOfLines = 3
+        companionMessage.setAccessibilityLabel("小伙伴消息")
+        companionMessage.translatesAutoresizingMaskIntoConstraints = false
+        sidebar.addSubview(companionMessage)
         NSLayoutConstraint.activate([
+            companionImage.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 18),
+            companionImage.bottomAnchor.constraint(equalTo: settingsButton.topAnchor, constant: -18),
+            companionImage.widthAnchor.constraint(equalToConstant: 42),
+            companionImage.heightAnchor.constraint(equalToConstant: 42),
+            companionMessage.leadingAnchor.constraint(equalTo: companionImage.trailingAnchor, constant: 8),
+            companionMessage.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -14),
+            companionMessage.centerYAnchor.constraint(equalTo: companionImage.centerYAnchor),
             settingsButton.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 16),
             settingsButton.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor, constant: -20),
             settingsButton.widthAnchor.constraint(equalToConstant: 156),
@@ -630,11 +692,13 @@ private final class TodoWorkspaceView: NSView {
     }
 
     private func addQuickAction(title: String, reminder: QuickReminder, to stack: NSStackView) {
-        let button = NSButton(title: title, target: self, action: #selector(createQuickTask(_:)))
+        let button = NSButton(title: title, target: self, action: #selector(selectReminder(_:)))
         button.tag = reminderTag(for: reminder)
         button.bezelStyle = .rounded
         button.font = .systemFont(ofSize: 12, weight: .medium)
+        button.setAccessibilityHelp("选择提醒时间，不会立即创建待办")
         stack.addArrangedSubview(button)
+        reminderButtons[button.tag] = button
     }
 
     @objc private func selectSection(_ sender: NSButton) {
@@ -701,11 +765,13 @@ private final class TodoWorkspaceView: NSView {
     }
 
     @objc private func createInboxTask() {
-        createTask(with: .none)
+        createTask(with: selectedReminder)
     }
 
-    @objc private func createQuickTask(_ sender: NSButton) {
-        createTask(with: reminder(for: sender.tag))
+    @objc private func selectReminder(_ sender: NSButton) {
+        selectedReminder = reminder(for: sender.tag)
+        updateReminderButtons()
+        window?.makeFirstResponder(inputField)
     }
 
     private func createTask(with reminder: QuickReminder) {
@@ -716,7 +782,7 @@ private final class TodoWorkspaceView: NSView {
         }
         inputField.stringValue = ""
         messageLabel.textColor = .systemGreen
-        messageLabel.stringValue = reminder == .none ? "已加入收集箱。" : "提醒已设置。"
+        messageLabel.stringValue = reminder == .none ? "收好了，随时可以回来处理。" : "记好了，到时我会提醒你。"
         selectedSection = reminder == .none ? .inbox : .today
         refresh()
     }
@@ -724,6 +790,10 @@ private final class TodoWorkspaceView: NSView {
     private func refresh() {
         titleLabel.stringValue = selectedSection.title
         let tasks = taskProvider()
+        let sectionCount = tasks.filter { $0.status == selectedSection.status }.count
+        subtitleLabel.stringValue = subtitle(for: selectedSection, count: sectionCount)
+        updateReminderButtons()
+        updateCompanionMessage()
         selectedTaskIDs.formIntersection(Set(tasks.map(\.id)))
         updateBatchDeleteButton()
         Section.allCases.forEach { section in
@@ -741,11 +811,18 @@ private final class TodoWorkspaceView: NSView {
             .filter { $0.status == selectedSection.status }
             .sorted { $0.createdAt > $1.createdAt }
         if visibleTasks.isEmpty {
-            let empty = NSTextField(labelWithString: emptyMessage(for: selectedSection))
-            empty.alignment = .center
-            empty.textColor = .secondaryLabelColor
-            empty.font = .systemFont(ofSize: 14)
-            empty.heightAnchor.constraint(equalToConstant: 120).isActive = true
+            let emptyTitle = NSTextField(labelWithString: emptyTitle(for: selectedSection))
+            emptyTitle.alignment = .center
+            emptyTitle.font = .systemFont(ofSize: 15, weight: .semibold)
+            let emptyDetail = NSTextField(wrappingLabelWithString: emptyMessage(for: selectedSection))
+            emptyDetail.alignment = .center
+            emptyDetail.textColor = .secondaryLabelColor
+            emptyDetail.font = .systemFont(ofSize: 13)
+            let empty = NSStackView(views: [emptyTitle, emptyDetail])
+            empty.orientation = .vertical
+            empty.alignment = .centerX
+            empty.spacing = 6
+            empty.edgeInsets = NSEdgeInsets(top: 42, left: 16, bottom: 36, right: 16)
             taskStack.addArrangedSubview(empty)
             return
         }
@@ -757,6 +834,7 @@ private final class TodoWorkspaceView: NSView {
                 isSelected: selectedTaskIDs.contains(task.id),
                 onSelect: { [weak self] id in self?.toggleSelection(for: id) },
                 onComplete: { [weak self] id in self?.perform { self?.onComplete(id) } },
+                onRestore: { [weak self] id in self?.perform { self?.onRestore(id) } },
                 onUpdateReminder: { [weak self] id, reminder in self?.perform { self?.onUpdateReminder(id, reminder) } },
                 onDelete: { [weak self] id in self?.perform { self?.onDelete(id) } }
             )
@@ -794,10 +872,58 @@ private final class TodoWorkspaceView: NSView {
 
     private func emptyMessage(for section: Section) -> String {
         switch section {
-        case .inbox: "收集箱是空的。记下一件想做的事。"
-        case .today: "今天还没有安排。"
-        case .completed: "完成的任务会出现在这里。"
+        case .inbox: "想到什么就先记下来，不必现在整理。"
+        case .today: "给自己一点呼吸空间，也是一种进度。"
+        case .completed: "完成一项后，你的足迹会留在这里。"
         }
+    }
+
+    private func emptyTitle(for section: Section) -> String {
+        switch section {
+        case .inbox: "脑袋暂时清空啦"
+        case .today: "今天很轻盈"
+        case .completed: "下一次完成，从一件小事开始"
+        }
+    }
+
+    private func subtitle(for section: Section, count: Int) -> String {
+        switch section {
+        case .inbox: count == 0 ? "随手收集，稍后安排" : "\(count) 件想法等待安排"
+        case .today: count == 0 ? "留白也是计划的一部分" : "今天还有 \(count) 件事"
+        case .completed: count == 0 ? "你的每一点进展都会留在这里" : "已经完成 \(count) 件，做得很好"
+        }
+    }
+
+    private func updateReminderButtons() {
+        let selectedTag = reminderTag(for: selectedReminder)
+        reminderButtons.forEach { tag, button in
+            button.state = tag == selectedTag ? .on : .off
+            button.contentTintColor = tag == selectedTag ? .controlAccentColor : .labelColor
+            button.setAccessibilityValue(tag == selectedTag ? "已选择" : "未选择")
+        }
+    }
+
+    private func startCompanionMessages() {
+        updateCompanionMessage()
+        companionTimer = Timer.scheduledTimer(withTimeInterval: 18, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async { self?.updateCompanionMessage() }
+        }
+    }
+
+    private func updateCompanionMessage() {
+        let tasks = taskProvider()
+        let activeCount = tasks.filter { $0.status != .completed }.count
+        let hour = Calendar.current.component(.hour, from: .now)
+        let messages: [String]
+        if activeCount == 0 {
+            messages = ["今天也辛苦啦。", "我在这里，慢慢来。", "空下来时，记得伸个懒腰。"]
+        } else if hour >= 22 || hour < 7 {
+            messages = ["很晚啦，剩下的明天再接住。", "先休息，我会替你记着。"]
+        } else {
+            messages = ["一次只做一件，就很好。", "我替你记着，你安心向前。", "完成小事，也值得开心。"]
+        }
+        let next = messages.randomElement() ?? "我在这里。"
+        companionMessage.stringValue = next
     }
 
     private func reminderTag(for reminder: QuickReminder) -> Int {
@@ -829,6 +955,7 @@ private final class TaskRowView: NSView {
     private let isSelected: Bool
     private let onSelect: (UUID) -> Void
     private let onComplete: (UUID) -> Void
+    private let onRestore: (UUID) -> Void
     private let onUpdateReminder: (UUID, QuickReminder) -> Void
     private let onDelete: (UUID) -> Void
 
@@ -838,6 +965,7 @@ private final class TaskRowView: NSView {
         isSelected: Bool,
         onSelect: @escaping (UUID) -> Void,
         onComplete: @escaping (UUID) -> Void,
+        onRestore: @escaping (UUID) -> Void,
         onUpdateReminder: @escaping (UUID, QuickReminder) -> Void,
         onDelete: @escaping (UUID) -> Void
     ) {
@@ -846,6 +974,7 @@ private final class TaskRowView: NSView {
         self.isSelected = isSelected
         self.onSelect = onSelect
         self.onComplete = onComplete
+        self.onRestore = onRestore
         self.onUpdateReminder = onUpdateReminder
         self.onDelete = onDelete
         super.init(frame: .zero)
@@ -863,14 +992,13 @@ private final class TaskRowView: NSView {
                 systemSymbolName: isSelecting ? (isSelected ? "checkmark.circle.fill" : "circle") : (task.status == .completed ? "checkmark.circle.fill" : "circle"),
                 accessibilityDescription: isSelecting
                     ? "选择待办"
-                    : (task.status == .completed ? "已完成" : "完成待办")
+                    : (task.status == .completed ? "恢复待办" : "完成待办")
             ) ?? NSImage(),
             target: self,
             action: #selector(performPrimaryAction)
         )
         completeButton.bezelStyle = .inline
         completeButton.contentTintColor = task.status == .completed ? .controlAccentColor : .secondaryLabelColor
-        completeButton.isEnabled = task.status != .completed
         completeButton.isHidden = isSelecting
         completeButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(completeButton)
@@ -943,6 +1071,8 @@ private final class TaskRowView: NSView {
     @objc private func performPrimaryAction() {
         if isSelecting {
             onSelect(task.id)
+        } else if task.status == .completed {
+            onRestore(task.id)
         } else {
             onComplete(task.id)
         }

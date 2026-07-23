@@ -17,7 +17,7 @@ final class SingleInstanceLock {
                 in: .userDomainMask,
                 appropriateFor: nil,
                 create: true
-            ).appendingPathComponent("BirdTodo", isDirectory: true)
+            ).appendingPathComponent("Perch", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
             let lockURL = directory.appendingPathComponent("instance.lock")

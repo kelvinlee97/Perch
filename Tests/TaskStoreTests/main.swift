@@ -88,6 +88,32 @@ func testCompletesAnInboxTask() throws {
     expect(store.tasks.first?.status == .completed, "the stored task is completed")
 }
 
+func testRestoresACompletedTaskToItsActionableSection() throws {
+    let store = TaskStore()
+    let inboxTask = try store.create(title: "Review notes")
+    let scheduledTask = try store.create(title: "Call Alex", reminderAt: Date())
+    _ = store.complete(id: inboxTask.id)
+    _ = store.complete(id: scheduledTask.id)
+
+    expect(store.restore(id: inboxTask.id)?.status == .inbox, "an unscheduled task returns to Inbox")
+    expect(store.restore(id: scheduledTask.id)?.status == .today, "a scheduled task returns to Today")
+}
+
+func testRepositoryPersistsARestoredTask() throws {
+    let fileURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("json")
+    defer { try? FileManager.default.removeItem(at: fileURL) }
+
+    let repository = try TaskRepository(fileURL: fileURL)
+    let task = try repository.create(title: "Review notes")
+    _ = try repository.complete(id: task.id)
+    _ = try repository.restore(id: task.id)
+
+    let reopenedRepository = try TaskRepository(fileURL: fileURL)
+    expect(reopenedRepository.tasks.first?.status == .inbox, "a restored task stays actionable after reopening")
+}
+
 func testChangesACompletedTaskBackToInboxWhenItsReminderIsCleared() throws {
     let store = TaskStore()
     let task = try store.create(title: "Send notes", reminderAt: Date())
@@ -205,6 +231,8 @@ do {
     testPlacesTheBirdInsideTheBottomRightScreenCorner()
     try testRepositoryRestoresTasksAfterItIsReopened()
     try testCompletesAnInboxTask()
+    try testRestoresACompletedTaskToItsActionableSection()
+    try testRepositoryPersistsARestoredTask()
     try testChangesACompletedTaskBackToInboxWhenItsReminderIsCleared()
     try testChangesATaskToTodayWhenItReceivesAReminder()
     try testDeletesATaskAndPersistsTheRemoval()

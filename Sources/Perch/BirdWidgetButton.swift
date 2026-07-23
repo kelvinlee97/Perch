@@ -15,7 +15,7 @@ final class BirdWidgetButton: NSButton {
         super.init(frame: frameRect)
         isBordered = false
         title = ""
-        setAccessibilityLabel("打开 Bird Todo")
+        setAccessibilityLabel("打开 Perch")
         startAnimation()
     }
 

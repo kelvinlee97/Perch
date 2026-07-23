@@ -1,4 +1,4 @@
-# Implementation Plan: Bird Todo macOS MVP
+# Implementation Plan: Perch macOS MVP
 
 ## Overview
 
