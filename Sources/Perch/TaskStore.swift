@@ -49,11 +49,15 @@ enum QuickReminder {
 
 enum ReminderQueue {
     static func nextDueTask(from tasks: [Task], now: Date) -> Task? {
+        dueTasks(from: tasks, now: now).first
+    }
+
+    static func dueTasks(from tasks: [Task], now: Date) -> [Task] {
         tasks
             .filter { task in
                 task.status == .today && (task.reminderAt ?? .distantFuture) <= now
             }
-            .min { left, right in
+            .sorted { left, right in
                 (left.reminderAt ?? .distantFuture) < (right.reminderAt ?? .distantFuture)
             }
     }
@@ -133,7 +137,7 @@ final class TaskStore {
 
 final class TaskRepository {
     private let persistence: TaskFileStore
-    private let store: TaskStore
+    private var store: TaskStore
 
     var tasks: [Task] {
         store.tasks
@@ -146,52 +150,52 @@ final class TaskRepository {
 
     @discardableResult
     func create(title: String, reminderAt: Date? = nil) throws -> Task {
-        let task = try store.create(title: title, reminderAt: reminderAt)
-        try persistence.save(store.tasks)
-        return task
+        try commit { store in
+            try store.create(title: title, reminderAt: reminderAt)
+        }
     }
 
     @discardableResult
     func complete(id: UUID) throws -> Task? {
-        let task = store.complete(id: id)
-        if task != nil {
-            try persistence.save(store.tasks)
+        try commit { store in
+            store.complete(id: id)
         }
-        return task
     }
 
     @discardableResult
     func restore(id: UUID) throws -> Task? {
-        let task = store.restore(id: id)
-        if task != nil {
-            try persistence.save(store.tasks)
+        try commit { store in
+            store.restore(id: id)
         }
-        return task
     }
 
     @discardableResult
     func updateReminder(id: UUID, reminderAt: Date?) throws -> Task? {
-        let task = store.updateReminder(id: id, reminderAt: reminderAt)
-        if task != nil {
-            try persistence.save(store.tasks)
+        try commit { store in
+            store.updateReminder(id: id, reminderAt: reminderAt)
         }
-        return task
     }
 
     func delete(id: UUID) throws -> Bool {
-        let wasDeleted = store.delete(id: id)
-        if wasDeleted {
-            try persistence.save(store.tasks)
+        try commit { store in
+            store.delete(id: id)
         }
-        return wasDeleted
     }
 
     func delete(ids: Set<UUID>) throws -> Int {
-        let deletedCount = store.delete(ids: ids)
-        if deletedCount > 0 {
-            try persistence.save(store.tasks)
+        try commit { store in
+            store.delete(ids: ids)
         }
-        return deletedCount
+    }
+
+    private func commit<Result>(_ mutate: (TaskStore) throws -> Result) throws -> Result {
+        let candidate = TaskStore(tasks: store.tasks)
+        let result = try mutate(candidate)
+        if candidate.tasks != store.tasks {
+            try persistence.save(candidate.tasks)
+            store = candidate
+        }
+        return result
     }
 }
 

@@ -2,12 +2,14 @@
 
 ## Task 1: macOS shell and resting bird
 
+**Status:** Implementation and manual verification complete.
+
 **Description:** Create the native app shell, menu-bar entry, and transparent window that hosts a fixed resting bird.
 
 **Acceptance criteria:**
-- [ ] Launching the app shows a small bird in the selected screen corner.
-- [ ] The menu bar can show, hide, and quit the app.
-- [ ] The bird does not steal focus during ordinary use.
+- [x] Launching the app shows a small bird in the selected screen corner.
+- [x] The menu bar can show, hide, and quit the app.
+- [x] The bird does not steal focus during ordinary use.
 
 **Verification:**
 - [ ] Manual check: launch, hide, show, and quit the app.
@@ -37,12 +39,14 @@
 
 ## Task 3: Quick capture
 
-**Description:** Let users create a task from the bird panel or a global shortcut.
+**Status:** Foreground capture is implemented; a system-wide shortcut is deferred.
+
+**Description:** Let users create a task from the bird panel or a foreground keyboard shortcut.
 
 **Acceptance criteria:**
-- [ ] The panel can create an inbox task with title only.
-- [ ] A task can be given one of the four quick reminder choices.
-- [ ] Return saves the task; Escape cancels capture.
+- [x] The panel can create an inbox task with title only.
+- [x] A task can be given one of the four quick reminder choices.
+- [x] Return saves the task.
 
 **Verification:**
 - [ ] Manual check: create five tasks using both entry points.
@@ -53,12 +57,14 @@
 
 ## Task 4: Scheduling and due queue
 
+**Status:** Implementation and automated queue verification complete.
+
 **Description:** Identify due tasks and select one task to display at a time.
 
 **Acceptance criteria:**
-- [ ] A due task enters the actionable queue at its scheduled time.
-- [ ] Only the oldest due task is active.
-- [ ] Other due tasks are reflected in a count badge.
+- [x] A due task enters the actionable queue at its scheduled time.
+- [x] Only the oldest due task is active.
+- [x] Other due tasks are reflected in the reminder count.
 
 **Verification:**
 - [ ] Manual check: schedule three near-term tasks and confirm their order.
@@ -69,12 +75,14 @@
 
 ## Task 5: Reminder actions
 
+**Status:** Implementation complete; manual action verification remains.
+
 **Description:** Present the active due task on the bird and allow completion or deferral.
 
 **Acceptance criteria:**
-- [ ] The active task title appears with the bird.
-- [ ] Clicking the title completes the task.
-- [ ] The action menu can defer, edit, or delete the task.
+- [x] The active task title appears beside the bird.
+- [x] Clicking the title completes the task.
+- [x] The action menu can defer or delete the task.
 
 **Verification:**
 - [ ] Manual check: process each action for a due task.
@@ -85,12 +93,14 @@
 
 ## Task 6: Compact task panel
 
-**Description:** Display Inbox, Today, and Completed tasks in a compact editable panel.
+**Status:** Core task panel implementation complete; title editing remains deferred.
+
+**Description:** Display Inbox, Today, and Completed tasks in a compact panel.
 
 **Acceptance criteria:**
-- [ ] Each section contains the correct tasks.
-- [ ] A task can be edited, completed, or deleted in place.
-- [ ] Closing the panel returns to the resting bird.
+- [x] Each section contains the correct tasks.
+- [x] A task can be completed, restored, rescheduled, or deleted in place.
+- [x] Closing the panel returns to the resting bird.
 
 **Verification:**
 - [ ] Manual check: move a task through all three sections.

@@ -27,6 +27,7 @@ trap cleanup EXIT
 install -d "$staging_app/Contents/MacOS" "$staging_app/Contents/Resources"
 install -m 755 "$build_dir/release/Perch" "$staging_app/Contents/MacOS/Perch"
 install -m 644 "$root_dir/Sources/Perch/Assets/bird-companion.png" "$staging_app/Contents/Resources/bird-companion.png"
+install -m 644 "$root_dir/App/Perch.icns" "$staging_app/Contents/Resources/Perch.icns"
 cp "$root_dir/App/Info.plist" "$staging_app/Contents/Info.plist"
 plutil -replace CFBundleIdentifier -string "$bundle_id" "$staging_app/Contents/Info.plist"
 plutil -replace CFBundleShortVersionString -string "$version" "$staging_app/Contents/Info.plist"

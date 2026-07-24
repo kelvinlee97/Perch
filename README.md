@@ -35,6 +35,7 @@ The bird rests in the corner of your desktop without taking over your workspace.
 - Capture a task in a few seconds.
 - Sort tasks into **Inbox**, **Today**, and **Completed**.
 - Choose a quick time: no reminder, 10 minutes, tonight, or tomorrow.
+- See the earliest due task beside the bird, with later due tasks kept in the queue.
 - Complete, restore, reschedule, or delete tasks.
 - Use keyboard shortcuts for common actions.
 - Keep everything on your Mac in a local JSON store.
@@ -54,7 +55,7 @@ Perch is guided by a few simple ideas:
 
 Perch is an early macOS MVP under active development.
 
-The desktop companion, local task storage, task workspace, quick scheduling controls, and core task actions are implemented. The complete due-reminder loop, quiet hours, configurable bird behavior, and release-ready signing and notarization are still in progress.
+The desktop companion, local task storage, task workspace, quick scheduling controls, due-reminder queue, and core reminder actions are implemented. Quiet hours, configurable bird behavior, and release-ready signing and notarization are still in progress.
 
 ## Build it locally
 
@@ -86,6 +87,12 @@ To build and open Perch in one step:
 
 ```zsh
 PERCH_BUNDLE_ID=com.example.perch zsh Scripts/package-app.zsh && open release/Perch.app
+```
+
+Run the automated checks with:
+
+```zsh
+zsh Scripts/test.zsh
 ```
 
 The script does not install Perch in `/Applications`. Move the app there manually if you want to open it from Spotlight or Launchpad. The local build is ad hoc signed so macOS can verify that the bundle is internally consistent.

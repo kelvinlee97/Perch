@@ -6,10 +6,10 @@ Build a local-first macOS desktop companion for capturing short to-dos and gentl
 
 ## Architecture Decisions
 
-- Use native SwiftUI for the macOS-only MVP. It keeps the app light and gives reliable control over transparent windows, window level, menu-bar integration, and local notifications.
+- Use native AppKit for the macOS-only MVP. It keeps the app light and gives direct control over transparent panels, window levels, menu-bar integration, and keyboard commands.
 - Store all tasks locally. No account, sync service, or network dependency is needed to validate daily use.
 - Use one reminder queue: show only the oldest actionable due task on the bird; retain later due tasks in the task panel.
-- Ship the bird in a fixed corner by default. Dragging, transparency, and quiet hours are supported; free roaming is deferred until the core loop proves useful.
+- Ship the bird in a fixed corner by default. Dragging, configurable transparency, quiet hours, and free roaming are deferred until the core loop proves useful.
 
 ## Interaction Specification
 
@@ -17,27 +17,25 @@ Build a local-first macOS desktop companion for capturing short to-dos and gentl
 
 - The bird rests in the bottom-right corner after launch.
 - It has a small idle animation but no text by default.
-- Clicking it opens the compact task panel without stealing focus from the current app until the user types.
-- The user may drag it to another screen corner.
+- Clicking it opens and focuses the compact task panel.
 
 ### B. Quick capture
 
-- A global shortcut opens a single-line capture field.
+- A foreground keyboard shortcut opens a single-line capture field.
 - Entering a title and pressing Return creates an inbox task immediately.
-- The capture field offers four reminder choices: none, 10 minutes, tonight, tomorrow; a custom picker is available after choosing more options.
-- Escape closes capture without changing existing tasks.
+- The capture field offers four reminder choices: none, 10 minutes, tonight, or tomorrow.
 
 ### C. Due reminder
 
-- When a task becomes due outside quiet hours, the bird briefly flies into its resting position and displays the task title.
+- When a task becomes due, a reminder card beside the bird displays the task title.
 - Clicking the title completes the task.
-- A secondary action menu offers: defer 10 minutes, tonight, tomorrow, edit, and delete.
-- The displayed task remains until handled. Other due tasks increment a small count badge and stay queued.
+- A secondary action menu offers: defer 10 minutes, tonight, tomorrow, and delete.
+- The displayed task remains until handled. Other due tasks appear as a queued count.
 
 ### D. Compact task panel
 
 - The panel contains only Inbox, Today, and Completed sections.
-- Users can complete, edit, change reminder time, or delete a task in place.
+- Users can complete, restore, change reminder time, or delete a task in place.
 - Closing the panel returns the bird to its idle state.
 
 ### E. Quiet mode and settings
@@ -50,20 +48,20 @@ Build a local-first macOS desktop companion for capturing short to-dos and gentl
 
 ### Phase 1: Prove the core loop
 
-- [ ] Task 1: Create the macOS shell with a menu-bar entry and transparent bird window.
+- [x] Task 1: Create the macOS shell with a menu-bar entry and transparent bird window.
 - [x] Task 2: Add a local task model and persistence layer.
-- [ ] Task 3: Implement quick capture and create an inbox task.
+- [x] Task 3: Implement quick capture and create an inbox task.
 
 ### Checkpoint: Capture
 
-- [ ] The app launches into a resting bird.
-- [ ] A user can add a task in two seconds and still see it after relaunch.
+- [x] The app launches into a resting bird.
+- [x] A user can add a task and still see it after relaunch.
 
 ### Phase 2: Make reminders actionable
 
-- [ ] Task 4: Implement scheduling and due-task selection.
-- [ ] Task 5: Implement the bird reminder state and complete/defer/delete actions.
-- [ ] Task 6: Build the compact task panel for Inbox, Today, and Completed.
+- [x] Task 4: Implement scheduling and due-task selection.
+- [x] Task 5: Implement the bird reminder state and complete/defer/delete actions.
+- [x] Task 6: Build the compact task panel for Inbox, Today, and Completed.
 
 ### Checkpoint: Reminder loop
 

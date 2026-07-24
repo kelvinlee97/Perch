@@ -4,10 +4,13 @@ import AppKit
 final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let birdSize = CGSize(width: 88, height: 88)
     private var birdWindow: NSPanel?
+    private var reminderWindow: NSPanel?
     private var workspaceWindow: NSPanel?
     private var settingsWindow: NSPanel?
     private var statusItem: NSStatusItem?
     private var taskRepository: TaskRepository?
+    private var reminderTimer: Timer?
+    private var presentedReminderSignature: String?
     private let shortcutStore = ShortcutStore()
     private var shortcutMenuItems: [ShortcutAction: [NSMenuItem]] = [:]
 
@@ -21,6 +24,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
 
         configureStatusItem()
         showBird()
+        startReminderMonitoring()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
@@ -29,6 +33,11 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
 
     func applicationDidChangeScreenParameters(_ notification: Notification) {
         showBird()
+        updateDueReminder()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        reminderTimer?.invalidate()
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -328,6 +337,114 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         }
     }
 
+    private func startReminderMonitoring() {
+        updateDueReminder()
+        let timer = Timer(
+            timeInterval: 1,
+            target: self,
+            selector: #selector(checkDueReminders),
+            userInfo: nil,
+            repeats: true
+        )
+        RunLoop.main.add(timer, forMode: .common)
+        reminderTimer = timer
+    }
+
+    @objc private func checkDueReminders() {
+        updateDueReminder()
+    }
+
+    private func updateDueReminder(now: Date = .now) {
+        guard let taskRepository else {
+            hideDueReminder()
+            return
+        }
+
+        let dueTasks = ReminderQueue.dueTasks(from: taskRepository.tasks, now: now)
+        guard let task = dueTasks.first else {
+            hideDueReminder()
+            return
+        }
+
+        let signature = "\(task.id.uuidString):\(dueTasks.count)"
+        if signature == presentedReminderSignature {
+            reminderWindow?.orderFrontRegardless()
+            return
+        }
+
+        showDueReminder(task: task, additionalCount: dueTasks.count - 1)
+        presentedReminderSignature = signature
+    }
+
+    private func showDueReminder(task: Task, additionalCount: Int) {
+        guard let birdWindow, let screen = birdWindow.screen ?? NSScreen.main else { return }
+
+        let size = CGSize(width: 380, height: 118)
+        let visibleFrame = screen.visibleFrame
+        let origin = CGPoint(
+            x: max(visibleFrame.minX + 8, birdWindow.frame.minX - size.width - 12),
+            y: min(
+                max(visibleFrame.minY + 8, birdWindow.frame.midY - size.height / 2),
+                visibleFrame.maxY - size.height - 8
+            )
+        )
+        let panel = DueReminderPanel(
+            contentRect: NSRect(origin: origin, size: size),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = "到期提醒"
+        panel.setAccessibilityTitle("到期提醒")
+        panel.becomesKeyOnlyIfNeeded = true
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.hidesOnDeactivate = false
+        panel.level = .statusBar
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        panel.contentView = DueReminderView(
+            frame: NSRect(origin: .zero, size: size),
+            task: task,
+            additionalCount: additionalCount,
+            onAction: { [weak self] action in
+                self?.performDueReminderAction(action, taskID: task.id)
+            }
+        )
+        reminderWindow?.orderOut(nil)
+        reminderWindow = panel
+        panel.orderFrontRegardless()
+    }
+
+    private func performDueReminderAction(_ action: DueReminderAction, taskID: UUID) -> String? {
+        let errorMessage: String?
+        switch action {
+        case .complete:
+            errorMessage = completeTask(id: taskID)
+        case .tenMinutes:
+            errorMessage = updateReminder(id: taskID, reminder: .tenMinutes)
+        case .tonight:
+            errorMessage = updateReminder(id: taskID, reminder: .tonight)
+        case .tomorrow:
+            errorMessage = updateReminder(id: taskID, reminder: .tomorrow)
+        case .delete:
+            errorMessage = deleteTask(id: taskID)
+        }
+
+        if errorMessage == nil {
+            (workspaceWindow?.contentView as? TodoWorkspaceView)?.reload()
+            presentedReminderSignature = nil
+            updateDueReminder()
+        }
+        return errorMessage
+    }
+
+    private func hideDueReminder() {
+        reminderWindow?.orderOut(nil)
+        reminderWindow = nil
+        presentedReminderSignature = nil
+    }
+
     private func taskFileURL() throws -> URL {
         let directory = try FileManager.default.url(
             for: .applicationSupportDirectory,
@@ -341,6 +458,11 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
 }
 
 private final class BirdPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
+
+private final class DueReminderPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 }
@@ -444,6 +566,10 @@ private final class TodoWorkspaceView: NSView {
 
     func select(section: Section) {
         selectedSection = section
+        refresh()
+    }
+
+    func reload() {
         refresh()
     }
 

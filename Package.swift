@@ -12,5 +12,9 @@ let package = Package(
             name: "Perch",
             resources: [.process("Assets")]
         ),
+        .testTarget(
+            name: "PerchTests",
+            dependencies: ["Perch"]
+        ),
     ]
 )

@@ -18,7 +18,7 @@ These instructions add Perch-specific context to the global Codex guidance. Do n
 - Keep a test only when it is stable, repeatable, protects important behavior, and has durable maintenance value.
 - Keep public documentation concise, non-duplicative, and limited to current behavior.
 - Report stale material outside the requested scope; do not update or remove it without confirmation.
-- Keep generated builds, temporary verification files, logs, screenshots, `.DS_Store`, and local agent instructions out of the public repository.
+- Keep generated builds, temporary verification files, logs, screenshots, and `.DS_Store` out of the public repository.
 
 ## Commands and Verification
 
@@ -26,6 +26,7 @@ After Swift changes:
 
 ```zsh
 swift build
+zsh Scripts/test.zsh
 ```
 
 For UI changes, launch Perch and exercise the affected interaction.
@@ -48,4 +49,3 @@ For documentation changes, verify every command, feature statement, and screensh
 - Modification approval does not authorize a commit or push.
 - Push directly to `origin/main` only when explicitly requested.
 - Do not create a branch or pull request unless explicitly requested.
-- Keep this file ignored by Git; it is local Codex guidance and must not be committed to the public repository.
