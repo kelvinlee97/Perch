@@ -143,10 +143,30 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
 
     private func configureStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(
-            systemSymbolName: "bird.fill",
-            accessibilityDescription: "Perch"
-        )
+        let companionImage = NSImage(
+            contentsOf: Bundle.main.url(forResource: "bird-companion", withExtension: "png")
+                ?? Bundle.module.url(forResource: "bird-companion", withExtension: "png")!
+        )!
+        let statusImage = NSImage(size: NSSize(width: 16, height: 16), flipped: false) { rect in
+            let visibleSource = NSRect(x: 133, y: 308, width: 1041, height: 882)
+            let visibleHeight = rect.width * visibleSource.height / visibleSource.width
+            let destination = NSRect(
+                x: rect.minX,
+                y: rect.midY - visibleHeight / 2,
+                width: rect.width,
+                height: visibleHeight
+            )
+            companionImage.draw(
+                in: destination,
+                from: visibleSource,
+                operation: .sourceOver,
+                fraction: 1
+            )
+            return true
+        }
+        statusImage.isTemplate = false
+        item.button?.image = statusImage
+        item.button?.setAccessibilityLabel("Perch")
 
         let menu = NSMenu()
         addShortcutMenuItem(.newTask, to: menu)
