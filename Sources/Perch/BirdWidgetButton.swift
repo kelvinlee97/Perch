@@ -10,6 +10,20 @@ final class BirdWidgetButton: NSButton {
     private var phase: CGFloat = 0
     private var isHovering = false
     private var clickPulse: CGFloat = 0
+    var isQuietMode = false {
+        didSet {
+            guard isQuietMode != oldValue else { return }
+            if isQuietMode {
+                animationTimer?.invalidate()
+                animationTimer = nil
+                phase = 0
+                clickPulse = 0
+            } else {
+                startAnimation()
+            }
+            needsDisplay = true
+        }
+    }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -43,16 +57,21 @@ final class BirdWidgetButton: NSButton {
     override func mouseEntered(with event: NSEvent) {
         isHovering = true
         NSCursor.pointingHand.push()
+        needsDisplay = true
     }
 
     override func mouseExited(with event: NSEvent) {
         isHovering = false
         NSCursor.pop()
+        needsDisplay = true
     }
 
     override func mouseUp(with event: NSEvent) {
-        clickPulse = 1
+        if !isQuietMode {
+            clickPulse = 1
+        }
         super.mouseUp(with: event)
+        needsDisplay = true
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -60,9 +79,9 @@ final class BirdWidgetButton: NSButton {
         context?.saveGState()
         defer { context?.restoreGState() }
 
-        let bounce = sin(phase) * 2.2
+        let bounce = isQuietMode ? 0 : sin(phase) * 2.2
         let scale = 1.0 + (isHovering ? 0.045 : 0) - clickPulse * 0.08
-        let rotation = sin(phase * 2.4) * (isHovering ? 0.025 : 0.008)
+        let rotation = isQuietMode ? 0 : sin(phase * 2.4) * (isHovering ? 0.025 : 0.008)
         context?.translateBy(x: bounds.midX, y: bounds.midY + bounce)
         context?.rotate(by: rotation)
         context?.scaleBy(x: scale, y: scale)
@@ -92,6 +111,7 @@ final class BirdWidgetButton: NSButton {
     }
 
     @objc private func advanceAnimation() {
+        guard !isQuietMode else { return }
         phase += 0.16
         clickPulse = max(0, clickPulse - 0.12)
         needsDisplay = true

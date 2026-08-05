@@ -12,7 +12,9 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
     private var reminderTimer: Timer?
     private var presentedReminderSignature: String?
     private let shortcutStore = ShortcutStore()
+    private let appPreferences = AppPreferences()
     private var shortcutMenuItems: [ShortcutAction: [NSMenuItem]] = [:]
+    private var pauseRemindersMenuItems: [NSMenuItem] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
@@ -24,7 +26,9 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
 
         configureStatusItem()
         showBird()
+        updatePauseStatePresentation()
         startReminderMonitoring()
+        showGettingStartedIfNeeded()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
@@ -89,6 +93,42 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         settingsWindow = panel
     }
 
+    @objc private func toggleRemindersPaused() {
+        appPreferences.remindersPaused.toggle()
+        updatePauseStatePresentation()
+        if appPreferences.remindersPaused {
+            hideDueReminder()
+        } else {
+            updateDueReminder()
+        }
+    }
+
+    @objc private func showGettingStarted() {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.icon = NSApp.applicationIconImage
+        alert.messageText = "欢迎来到 Perch"
+        alert.informativeText = """
+        1. 点击桌面右下角的小鸟，快速记下一件事。
+
+        2. 选择 10 分钟、今晚或明天，Perch 到时只提醒一件事。
+
+        3. 需要专注时，从菜单栏打开“暂停提醒”，小鸟会安静下来。
+        """
+        alert.addButton(withTitle: "开始使用")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
+        appPreferences.hasCompletedOnboarding = true
+        showWorkspace()
+    }
+
+    private func showGettingStartedIfNeeded() {
+        guard !appPreferences.hasCompletedOnboarding else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.showGettingStarted()
+        }
+    }
+
     @objc private func showInbox() {
         showWorkspace(section: .inbox)
     }
@@ -113,6 +153,11 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         menu.addItem(withTitle: "显示待办", action: #selector(showQuickCapture), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "小鸟回到右下角", action: #selector(showBirdFromMenu), keyEquivalent: "")
+        let pauseItem = menu.addItem(withTitle: "暂停提醒", action: #selector(toggleRemindersPaused), keyEquivalent: "")
+        pauseItem.target = self
+        pauseRemindersMenuItems.append(pauseItem)
+        let gettingStartedItem = menu.addItem(withTitle: "使用入门…", action: #selector(showGettingStarted), keyEquivalent: "")
+        gettingStartedItem.target = self
         menu.addItem(withTitle: "设置…", action: #selector(showSettings), keyEquivalent: "")
         menu.addItem(.separator())
         addShortcutMenuItem(.quit, to: menu)
@@ -127,7 +172,12 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         let appMenuItem = NSMenuItem()
         let appMenu = NSMenu(title: "Perch")
         appMenu.addItem(withTitle: "关于 Perch", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let gettingStartedItem = appMenu.addItem(withTitle: "使用入门…", action: #selector(showGettingStarted), keyEquivalent: "")
+        gettingStartedItem.target = self
         appMenu.addItem(.separator())
+        let pauseItem = appMenu.addItem(withTitle: "暂停提醒", action: #selector(toggleRemindersPaused), keyEquivalent: "")
+        pauseItem.target = self
+        pauseRemindersMenuItems.append(pauseItem)
         addShortcutMenuItem(.settings, to: appMenu)
         appMenu.addItem(.separator())
         addShortcutMenuItem(.quit, to: appMenu)
@@ -168,6 +218,16 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         }
     }
 
+    private func updatePauseStatePresentation() {
+        pauseRemindersMenuItems.forEach {
+            $0.state = appPreferences.remindersPaused ? .on : .off
+        }
+        (birdWindow?.contentView as? BirdWidgetButton)?.isQuietMode = appPreferences.remindersPaused
+        statusItem?.button?.setAccessibilityLabel(
+            appPreferences.remindersPaused ? "Perch，提醒已暂停" : "Perch"
+        )
+    }
+
     private func selector(for action: ShortcutAction) -> Selector {
         switch action {
         case .newTask: #selector(showQuickCapture)
@@ -205,6 +265,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         button.toolTip = "打开 Perch"
         button.target = self
         button.action = #selector(showQuickCapture)
+        button.isQuietMode = appPreferences.remindersPaused
         panel.contentView = button
         panel.orderFrontRegardless()
         birdWindow = panel
@@ -355,6 +416,10 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
     }
 
     private func updateDueReminder(now: Date = .now) {
+        guard !appPreferences.remindersPaused else {
+            hideDueReminder()
+            return
+        }
         guard let taskRepository else {
             hideDueReminder()
             return

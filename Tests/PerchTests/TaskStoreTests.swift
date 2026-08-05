@@ -4,6 +4,43 @@ import Testing
 
 @Suite("Task repository")
 struct TaskRepositoryTests {
+    @Test("The complete task lifecycle persists across reloads")
+    func taskLifecyclePersists() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileURL = directory.appendingPathComponent("tasks.json")
+        let firstReminder = Date(timeIntervalSince1970: 1_000)
+        let secondReminder = Date(timeIntervalSince1970: 2_000)
+
+        var repository = try TaskRepository(fileURL: fileURL)
+        let created = try repository.create(title: "Core loop", reminderAt: firstReminder)
+        #expect(created.status == .today)
+
+        repository = try TaskRepository(fileURL: fileURL)
+        #expect(repository.tasks == [created])
+
+        let completed = try repository.complete(id: created.id)
+        #expect(completed?.status == .completed)
+        repository = try TaskRepository(fileURL: fileURL)
+        #expect(repository.tasks.first?.status == .completed)
+
+        let restored = try repository.restore(id: created.id)
+        #expect(restored?.status == .today)
+
+        let movedToInbox = try repository.updateReminder(id: created.id, reminderAt: nil)
+        #expect(movedToInbox?.status == .inbox)
+        #expect(movedToInbox?.reminderAt == nil)
+
+        let rescheduled = try repository.updateReminder(id: created.id, reminderAt: secondReminder)
+        #expect(rescheduled?.status == .today)
+        #expect(rescheduled?.reminderAt == secondReminder)
+
+        #expect(try repository.delete(id: created.id))
+        #expect(try TaskRepository(fileURL: fileURL).tasks.isEmpty)
+    }
+
     @Test("A failed save does not change the in-memory tasks")
     func failedSaveDoesNotChangeTasks() throws {
         let missingDirectory = FileManager.default.temporaryDirectory

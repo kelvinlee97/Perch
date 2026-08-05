@@ -37,6 +37,7 @@ The bird rests in the corner of your desktop without taking over your workspace.
 - Choose a quick time: no reminder, 10 minutes, tonight, or tomorrow.
 - See the earliest due task beside the bird, with later due tasks kept in the queue.
 - Complete, restore, reschedule, or delete tasks.
+- Pause reminders immediately from the Perch menu.
 - Use keyboard shortcuts for common actions.
 - Keep everything on your Mac in a local JSON store.
 - Open the workspace from the bird or the menu bar.
@@ -55,13 +56,14 @@ Perch is guided by a few simple ideas:
 
 Perch is an early macOS MVP under active development.
 
-The desktop companion, local task storage, task workspace, quick scheduling controls, due-reminder queue, and core reminder actions are implemented. Quiet hours, configurable bird behavior, and release-ready signing and notarization are still in progress.
+The desktop companion, local task storage, task workspace, quick scheduling controls, due-reminder queue, core reminder actions, first-run guidance, and manual reminder pause are implemented. Scheduled quiet hours, configurable bird behavior, and release-ready signing and notarization are still in progress.
 
 ## Build it locally
 
 ### Requirements
 
 - macOS 14 or later
+- Apple silicon or Intel Mac
 - Swift 6 toolchain
 - Full Xcode for eventual Developer ID signing and notarization
 
@@ -100,13 +102,49 @@ The script does not install Perch in `/Applications`. Move the app there manuall
 > [!NOTE]
 > This build is intended for local development and testing. It is not yet Developer ID-signed or notarized for public distribution.
 
-## Public release checklist
+## Create a public release
 
-Before Perch can be offered as a public download:
+Public releases require full Xcode, an Apple Developer Program membership, a Developer ID Application certificate, and a `notarytool` keychain profile.
 
-1. Join the Apple Developer Program and install full Xcode.
-2. Sign the app with a Developer ID Application certificate and enable the hardened runtime.
-3. Submit the signed app or distribution container to Apple's notary service.
-4. Staple the notarization ticket and package the app as a `.dmg`.
+Store the notarization credentials once:
+
+```zsh
+xcrun notarytool store-credentials "perch-notary"
+```
+
+Then create the signed, notarized, and stapled disk image:
+
+```zsh
+PERCH_BUNDLE_ID=ink.example.perch \
+PERCH_VERSION=0.1.0 \
+PERCH_BUILD_NUMBER=1 \
+CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+NOTARY_PROFILE=perch-notary \
+zsh Scripts/package-release.zsh
+```
+
+The release script builds a Universal Binary for Apple silicon and Intel Macs, then verifies the Developer ID signature, hardened runtime, secure timestamp, notarization ticket, mounted app, and Gatekeeper assessment before replacing:
+
+```text
+release/Perch.dmg
+```
+
+It refuses to create a public release with an ad hoc identity or while Command Line Tools is selected instead of full Xcode.
+
+After uploading the DMG, download it again with Safari or another browser and verify that exact downloaded file:
+
+```zsh
+PERCH_BUNDLE_ID=ink.example.perch \
+PERCH_VERSION=0.1.0 \
+PERCH_BUILD_NUMBER=1 \
+PERCH_TEAM_ID=TEAMID \
+zsh Scripts/verify-downloaded-release.zsh ~/Downloads/Perch.dmg
+```
+
+This check requires browser quarantine metadata and verifies the stapled ticket, mounted app, exact Apple Developer team, bundle ID, version, build number, hardened runtime, secure timestamp, Gatekeeper assessment, and architecture without copying anything into `/Applications`.
 
 See Apple's guides for [distributing macOS software](https://developer.apple.com/macos/distribution/) and [notarizing macOS software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
+
+## Privacy and support
+
+Perch does not require an account or transmit task and usage data. Read the [privacy policy](./PRIVACY.md) or review the [changelog](./CHANGELOG.md). A public support contact will be added before the beta download becomes available.

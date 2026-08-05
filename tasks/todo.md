@@ -114,7 +114,7 @@
 **Description:** Let users control interruption and the bird's visual footprint.
 
 **Acceptance criteria:**
-- [ ] Quiet mode suppresses reminder animation.
+- [x] Quiet mode suppresses reminder animation.
 - [ ] Quiet hours resume with only one queued reminder.
 - [ ] The user can change bird position, size, opacity, and animation strength.
 
@@ -148,7 +148,7 @@
 **Acceptance criteria:**
 - [ ] Reduced animation is respected when chosen in app settings.
 - [ ] Core actions have clear labels and keyboard access.
-- [ ] First launch explains capture, reminder handling, and quiet mode in three steps or fewer.
+- [x] First launch explains capture, reminder handling, and quiet mode in three steps or fewer.
 
 **Verification:**
 - [ ] Manual check: complete the core loop using keyboard navigation.
