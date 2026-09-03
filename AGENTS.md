@@ -4,8 +4,17 @@ These instructions add Perch-specific context to the global Codex guidance. Do n
 
 ## Tech Stack
 
-- Perch is a local-first macOS 14+ desktop companion built with Swift 6.
-- Prefer existing Swift, SwiftUI, and AppKit patterns.
+- Perch is a local-first macOS 14+ desktop companion built with Swift 6, Swift Package Manager, and AppKit.
+- The native UI currently uses AppKit (`NSApplication`, `NSPanel`, `NSView`, `NSStackView`, and `NSStatusItem`); there is no SwiftUI UI layer in the current sources.
+- Native persistence uses Foundation's `FileManager`, `JSONEncoder`, and `JSONDecoder` to store tasks and preferences locally as JSON.
+- Native tests use the Swift Testing framework through the `Testing` module; the root package currently declares no third-party Swift package dependencies.
+- Native packaging uses zsh scripts, `swift build`, `Info.plist`, `codesign`, and `lipo`; public release packaging additionally uses Developer ID signing and `notarytool`.
+- The `web/` directory is an independent Web companion with its own cloud data and deployment lifecycle:
+  - Next.js App Router with React 19 and TypeScript.
+  - Tailwind CSS v4 through `@tailwindcss/postcss`, with CSS-first theme tokens and custom semantic CSS for branded/complex UI.
+  - shadcn/ui `base-nova` components, Base UI primitives, class-variance-authority, clsx, tailwind-merge, tw-animate-css, and Lucide React icons.
+  - Supabase SSR and JavaScript clients for email/password authentication, Postgres task data, and row-level security policies.
+  - Vercel is the deployment target; Vitest covers unit tests and Chrome MCP handles browser validation.
 - Do not add dependencies or architecture layers without explaining why the existing stack cannot meet the requirement cleanly.
 - Use four-space indentation, `UpperCamelCase` for types, and `lowerCamelCase` for methods and properties.
 - Name a Swift file after its primary type where practical.
