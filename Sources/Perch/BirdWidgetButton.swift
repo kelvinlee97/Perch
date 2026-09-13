@@ -29,7 +29,7 @@ final class BirdWidgetButton: NSButton {
         super.init(frame: frameRect)
         isBordered = false
         title = ""
-        setAccessibilityLabel("打开 Perch")
+        setAccessibilityLabel(perchLocalized("打开 Perch"))
         startAnimation()
     }
 

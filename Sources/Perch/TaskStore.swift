@@ -20,7 +20,7 @@ enum TaskStoreError: Error, Equatable, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .emptyTitle:
-            return "请输入待办内容。"
+            return perchLocalized("请输入待办内容。")
         }
     }
 }

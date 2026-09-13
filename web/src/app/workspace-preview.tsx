@@ -192,14 +192,6 @@ function reminderLabel(reminder: DemoReminder, content: PreviewCopy) {
   return reminder ? content.reminderLabels[reminder] : content.emptyReminder;
 }
 
-function previewDate(locale: Locale) {
-  return new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(2025, 7, 25));
-}
-
 export function WorkspacePreview({ locale }: { locale: Locale }) {
   const content = previewCopy[locale];
   const [tasks, setTasks] = useState<DemoTask[]>(initialTasks);
@@ -330,7 +322,6 @@ export function WorkspacePreview({ locale }: { locale: Locale }) {
       </aside>
 
       <div className="preview-content">
-        <p className="preview-date">{previewDate(locale)}</p>
         <h2>{content.sectionLabels[section]}</h2>
         <p className="preview-demo-note">{content.modeNote}</p>
 

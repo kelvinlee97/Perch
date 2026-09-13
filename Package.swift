@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Perch",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "Perch", targets: ["Perch"]),
@@ -10,7 +11,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Perch",
-            resources: [.process("Assets")]
+            resources: [.process("Assets"), .process("Resources")]
         ),
         .testTarget(
             name: "PerchTests",

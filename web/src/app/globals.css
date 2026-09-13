@@ -472,13 +472,7 @@
   padding: clamp(1.5rem, 4vw, 4rem);
 }
 
-.preview-date {
-  color: #87938a;
-  font-size: 0.8rem;
-}
-
 .preview-content h2 {
-  margin-top: 0.55rem;
   color: #164536;
   font-family: var(--font-serif);
   font-size: clamp(2rem, 4vw, 3.3rem);
