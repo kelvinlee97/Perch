@@ -61,6 +61,7 @@ else
 fi
 install -m 644 "$root_dir/Sources/Perch/Assets/bird-companion.png" "$staging_app/Contents/Resources/bird-companion.png"
 install -m 644 "$root_dir/App/Perch.icns" "$staging_app/Contents/Resources/Perch.icns"
+cp -R "$root_dir/Sources/Perch/Resources/"*.lproj "$staging_app/Contents/Resources/"
 cp "$root_dir/App/Info.plist" "$staging_app/Contents/Info.plist"
 plutil -replace CFBundleIdentifier -string "$bundle_id" "$staging_app/Contents/Info.plist"
 plutil -replace CFBundleShortVersionString -string "$version" "$staging_app/Contents/Info.plist"

@@ -11,13 +11,13 @@ enum ShortcutAction: String, CaseIterable, Codable {
 
     var title: String {
         switch self {
-        case .newTask: "新建待办"
-        case .closeWindow: "关闭待办窗口"
-        case .quit: "退出 Perch"
-        case .settings: "打开设置"
-        case .inbox: "切换到收集箱"
-        case .today: "切换到今天"
-        case .completed: "切换到已完成"
+        case .newTask: perchLocalized("新建待办")
+        case .closeWindow: perchLocalized("关闭待办窗口")
+        case .quit: perchLocalized("退出 Perch")
+        case .settings: perchLocalized("打开设置")
+        case .inbox: perchLocalized("切换到收集箱")
+        case .today: perchLocalized("切换到今天")
+        case .completed: perchLocalized("切换到已完成")
         }
     }
 
@@ -116,12 +116,12 @@ final class ShortcutSettingsView: NSView {
     required init?(coder: NSCoder) { nil }
 
     private func buildInterface() {
-        let title = NSTextField(labelWithString: "键盘快捷键")
+        let title = NSTextField(labelWithString: perchLocalized("键盘快捷键"))
         title.font = .systemFont(ofSize: 22, weight: .semibold)
         title.translatesAutoresizingMaskIntoConstraints = false
         addSubview(title)
 
-        let explanation = NSTextField(wrappingLabelWithString: "点击快捷键后按下新的组合键。快捷键只在 Perch 位于前台时生效。")
+        let explanation = NSTextField(wrappingLabelWithString: perchLocalized("点击快捷键后按下新的组合键。快捷键只在 Perch 位于前台时生效。"))
         explanation.font = .systemFont(ofSize: 13)
         explanation.textColor = .secondaryLabelColor
         explanation.translatesAutoresizingMaskIntoConstraints = false
@@ -155,7 +155,7 @@ final class ShortcutSettingsView: NSView {
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(messageLabel)
 
-        let resetButton = NSButton(title: "恢复默认快捷键", target: self, action: #selector(resetShortcuts))
+        let resetButton = NSButton(title: perchLocalized("恢复默认快捷键"), target: self, action: #selector(resetShortcuts))
         resetButton.bezelStyle = .rounded
         resetButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(resetButton)
@@ -179,13 +179,13 @@ final class ShortcutSettingsView: NSView {
     private func save(_ shortcut: KeyboardShortcut, for action: ShortcutAction) {
         guard !shortcut.modifierFlags.isEmpty else {
             messageLabel.textColor = .systemRed
-            messageLabel.stringValue = "请至少包含一个修饰键（⌘、⌥、⌃ 或 ⇧）。"
+            messageLabel.stringValue = perchLocalized("请至少包含一个修饰键（⌘、⌥、⌃ 或 ⇧）。")
             recorderButtons[action]?.restoreShortcut()
             return
         }
         if let conflict = shortcutStore.conflictingAction(for: shortcut, excluding: action) {
             messageLabel.textColor = .systemRed
-            messageLabel.stringValue = "“\(shortcut.displayString)”已用于“\(conflict.title)”。"
+            messageLabel.stringValue = perchLocalized("“%@”已用于“%@”。", shortcut.displayString, conflict.title)
             recorderButtons[action]?.restoreShortcut()
             return
         }
@@ -201,7 +201,7 @@ final class ShortcutSettingsView: NSView {
         ShortcutAction.allCases.forEach { action in
             recorderButtons[action]?.shortcut = shortcutStore.shortcut(for: action)
         }
-        messageLabel.stringValue = "已恢复默认快捷键。"
+        messageLabel.stringValue = perchLocalized("已恢复默认快捷键。")
         messageLabel.textColor = .systemGreen
         onShortcutsChanged()
     }
@@ -223,7 +223,7 @@ private final class ShortcutRecorderButton: NSButton {
         action = #selector(beginRecording)
         bezelStyle = .rounded
         font = .monospacedSystemFont(ofSize: 13, weight: .medium)
-        toolTip = "点击后按下新的快捷键"
+        toolTip = perchLocalized("点击后按下新的快捷键")
     }
 
     required init?(coder: NSCoder) { nil }
@@ -236,7 +236,7 @@ private final class ShortcutRecorderButton: NSButton {
 
     @objc private func beginRecording() {
         window?.makeFirstResponder(self)
-        title = "按下快捷键…"
+        title = perchLocalized("按下快捷键…")
         stopRecording()
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, self.window?.firstResponder === self else { return event }

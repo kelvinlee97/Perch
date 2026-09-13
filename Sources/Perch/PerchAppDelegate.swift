@@ -79,7 +79,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
             backing: .buffered,
             defer: false
         )
-        panel.title = "设置"
+        panel.title = perchLocalized("设置")
         panel.isReleasedWhenClosed = false
         panel.delegate = self
         panel.contentView = ShortcutSettingsView(
@@ -107,15 +107,13 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         let alert = NSAlert()
         alert.alertStyle = .informational
         alert.icon = NSApp.applicationIconImage
-        alert.messageText = "欢迎来到 Perch"
-        alert.informativeText = """
-        1. 点击桌面右下角的小鸟，快速记下一件事。
-
-        2. 选择 10 分钟、今晚或明天，Perch 到时只提醒一件事。
-
-        3. 需要专注时，从菜单栏打开“暂停提醒”，小鸟会安静下来。
-        """
-        alert.addButton(withTitle: "开始使用")
+        alert.messageText = perchLocalized("欢迎来到 Perch")
+        alert.informativeText = [
+            perchLocalized("1. 点击桌面右下角的小鸟，快速记下一件事。"),
+            perchLocalized("2. 选择 10 分钟、今晚或明天，Perch 到时只提醒一件事。"),
+            perchLocalized("3. 需要专注时，从菜单栏打开“暂停提醒”，小鸟会安静下来。")
+        ].joined(separator: "\n\n")
+        alert.addButton(withTitle: perchLocalized("开始使用"))
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
         appPreferences.hasCompletedOnboarding = true
@@ -170,15 +168,15 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
 
         let menu = NSMenu()
         addShortcutMenuItem(.newTask, to: menu)
-        menu.addItem(withTitle: "显示待办", action: #selector(showQuickCapture), keyEquivalent: "")
+        menu.addItem(withTitle: perchLocalized("显示待办"), action: #selector(showQuickCapture), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "小鸟回到右下角", action: #selector(showBirdFromMenu), keyEquivalent: "")
-        let pauseItem = menu.addItem(withTitle: "暂停提醒", action: #selector(toggleRemindersPaused), keyEquivalent: "")
+        menu.addItem(withTitle: perchLocalized("小鸟回到右下角"), action: #selector(showBirdFromMenu), keyEquivalent: "")
+        let pauseItem = menu.addItem(withTitle: perchLocalized("暂停提醒"), action: #selector(toggleRemindersPaused), keyEquivalent: "")
         pauseItem.target = self
         pauseRemindersMenuItems.append(pauseItem)
-        let gettingStartedItem = menu.addItem(withTitle: "使用入门…", action: #selector(showGettingStarted), keyEquivalent: "")
+        let gettingStartedItem = menu.addItem(withTitle: perchLocalized("使用入门…"), action: #selector(showGettingStarted), keyEquivalent: "")
         gettingStartedItem.target = self
-        menu.addItem(withTitle: "设置…", action: #selector(showSettings), keyEquivalent: "")
+        menu.addItem(withTitle: perchLocalized("设置…"), action: #selector(showSettings), keyEquivalent: "")
         menu.addItem(.separator())
         addShortcutMenuItem(.quit, to: menu)
         item.menu = menu
@@ -191,11 +189,11 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         let mainMenu = NSMenu()
         let appMenuItem = NSMenuItem()
         let appMenu = NSMenu(title: "Perch")
-        appMenu.addItem(withTitle: "关于 Perch", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
-        let gettingStartedItem = appMenu.addItem(withTitle: "使用入门…", action: #selector(showGettingStarted), keyEquivalent: "")
+        appMenu.addItem(withTitle: perchLocalized("关于 Perch"), action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let gettingStartedItem = appMenu.addItem(withTitle: perchLocalized("使用入门…"), action: #selector(showGettingStarted), keyEquivalent: "")
         gettingStartedItem.target = self
         appMenu.addItem(.separator())
-        let pauseItem = appMenu.addItem(withTitle: "暂停提醒", action: #selector(toggleRemindersPaused), keyEquivalent: "")
+        let pauseItem = appMenu.addItem(withTitle: perchLocalized("暂停提醒"), action: #selector(toggleRemindersPaused), keyEquivalent: "")
         pauseItem.target = self
         pauseRemindersMenuItems.append(pauseItem)
         addShortcutMenuItem(.settings, to: appMenu)
@@ -205,14 +203,14 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         mainMenu.addItem(appMenuItem)
 
         let fileMenuItem = NSMenuItem()
-        let fileMenu = NSMenu(title: "文件")
+        let fileMenu = NSMenu(title: perchLocalized("文件"))
         addShortcutMenuItem(.newTask, to: fileMenu)
         addShortcutMenuItem(.closeWindow, to: fileMenu)
         fileMenuItem.submenu = fileMenu
         mainMenu.addItem(fileMenuItem)
 
         let viewMenuItem = NSMenuItem()
-        let viewMenu = NSMenu(title: "查看")
+        let viewMenu = NSMenu(title: perchLocalized("查看"))
         addShortcutMenuItem(.inbox, to: viewMenu)
         addShortcutMenuItem(.today, to: viewMenu)
         addShortcutMenuItem(.completed, to: viewMenu)
@@ -244,7 +242,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         }
         (birdWindow?.contentView as? BirdWidgetButton)?.isQuietMode = appPreferences.remindersPaused
         statusItem?.button?.setAccessibilityLabel(
-            appPreferences.remindersPaused ? "Perch，提醒已暂停" : "Perch"
+            appPreferences.remindersPaused ? perchLocalized("Perch，提醒已暂停") : "Perch"
         )
     }
 
@@ -282,7 +280,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         let button = BirdWidgetButton(frame: NSRect(origin: .zero, size: birdSize))
-        button.toolTip = "打开 Perch"
+        button.toolTip = perchLocalized("打开 Perch")
         button.target = self
         button.action = #selector(showQuickCapture)
         button.isQuietMode = appPreferences.remindersPaused
@@ -362,14 +360,14 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
     private func createTask(title: String, reminder: QuickReminder) -> String? {
         do {
             guard let taskRepository else {
-                return "待办尚未准备好，请稍后再试。"
+                return perchLocalized("待办尚未准备好，请稍后再试。")
             }
             _ = try taskRepository.create(title: title, reminderAt: reminder.reminderDate())
             return nil
         } catch TaskStoreError.emptyTitle {
             return TaskStoreError.emptyTitle.localizedDescription
         } catch {
-            return "无法保存待办，请稍后再试。"
+            return perchLocalized("无法保存待办，请稍后再试。")
         }
     }
 
@@ -378,7 +376,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
             _ = try taskRepository?.complete(id: id)
             return nil
         } catch {
-            return "无法更新待办，请稍后再试。"
+            return perchLocalized("无法更新待办，请稍后再试。")
         }
     }
 
@@ -387,7 +385,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
             _ = try taskRepository?.restore(id: id)
             return nil
         } catch {
-            return "无法恢复待办，请稍后再试。"
+            return perchLocalized("无法恢复待办，请稍后再试。")
         }
     }
 
@@ -396,7 +394,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
             _ = try taskRepository?.updateReminder(id: id, reminderAt: reminder.reminderDate())
             return nil
         } catch {
-            return "无法更新待办，请稍后再试。"
+            return perchLocalized("无法更新待办，请稍后再试。")
         }
     }
 
@@ -405,7 +403,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
             _ = try taskRepository?.delete(id: id)
             return nil
         } catch {
-            return "无法删除待办，请稍后再试。"
+            return perchLocalized("无法删除待办，请稍后再试。")
         }
     }
 
@@ -414,7 +412,7 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
             _ = try taskRepository?.delete(ids: ids)
             return nil
         } catch {
-            return "无法删除待办，请稍后再试。"
+            return perchLocalized("无法删除待办，请稍后再试。")
         }
     }
 
@@ -479,8 +477,8 @@ final class PerchAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
             backing: .buffered,
             defer: false
         )
-        panel.title = "到期提醒"
-        panel.setAccessibilityTitle("到期提醒")
+        panel.title = perchLocalized("到期提醒")
+        panel.setAccessibilityTitle(perchLocalized("到期提醒"))
         panel.becomesKeyOnlyIfNeeded = true
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -560,9 +558,9 @@ private final class TodoWorkspaceView: NSView {
 
         var title: String {
             switch self {
-            case .inbox: "收集箱"
-            case .today: "今天"
-            case .completed: "已完成"
+            case .inbox: perchLocalized("收集箱")
+            case .today: perchLocalized("今天")
+            case .completed: perchLocalized("已完成")
             }
         }
 
@@ -715,7 +713,7 @@ private final class TodoWorkspaceView: NSView {
             sectionButtons[section] = button
         }
 
-        completedVisibilityButton.title = "隐藏已完成"
+        completedVisibilityButton.title = perchLocalized("隐藏已完成")
         completedVisibilityButton.target = self
         completedVisibilityButton.action = #selector(toggleCompletedVisibility)
         completedVisibilityButton.bezelStyle = .inline
@@ -735,14 +733,14 @@ private final class TodoWorkspaceView: NSView {
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(subtitleLabel)
 
-        selectionButton.title = "选择"
+        selectionButton.title = perchLocalized("选择")
         selectionButton.target = self
         selectionButton.action = #selector(toggleSelectionMode)
         selectionButton.bezelStyle = .texturedRounded
         selectionButton.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(selectionButton)
 
-        selectAllButton.title = "全选"
+        selectAllButton.title = perchLocalized("全选")
         selectAllButton.target = self
         selectAllButton.action = #selector(toggleSelectAll)
         selectAllButton.bezelStyle = .texturedRounded
@@ -750,7 +748,7 @@ private final class TodoWorkspaceView: NSView {
         selectAllButton.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(selectAllButton)
 
-        batchDeleteButton.title = "删除所选"
+        batchDeleteButton.title = perchLocalized("删除所选")
         batchDeleteButton.target = self
         batchDeleteButton.action = #selector(deleteSelectedTasks)
         batchDeleteButton.bezelStyle = .texturedRounded
@@ -759,16 +757,16 @@ private final class TodoWorkspaceView: NSView {
         batchDeleteButton.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(batchDeleteButton)
 
-        inputField.placeholderString = "现在想记下什么？"
+        inputField.placeholderString = perchLocalized("现在想记下什么？")
         inputField.font = .systemFont(ofSize: 15)
         inputField.target = self
         inputField.action = #selector(createInboxTask)
-        inputField.setAccessibilityLabel("新待办")
-        inputField.setAccessibilityHelp("输入内容，选择提醒时间，然后按回车添加")
+        inputField.setAccessibilityLabel(perchLocalized("新待办"))
+        inputField.setAccessibilityHelp(perchLocalized("输入内容，选择提醒时间，然后按回车添加"))
         inputField.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(inputField)
 
-        let addButton = NSButton(title: "添加", target: self, action: #selector(createInboxTask))
+        let addButton = NSButton(title: perchLocalized("添加"), target: self, action: #selector(createInboxTask))
         addButton.bezelStyle = .rounded
         addButton.font = .systemFont(ofSize: 13, weight: .medium)
         addButton.translatesAutoresizingMaskIntoConstraints = false
@@ -779,14 +777,14 @@ private final class TodoWorkspaceView: NSView {
         quickActions.spacing = 8
         quickActions.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(quickActions)
-        addQuickAction(title: "收集箱", reminder: .none, to: quickActions)
-        addQuickAction(title: "10 分钟", reminder: .tenMinutes, to: quickActions)
-        addQuickAction(title: "今晚", reminder: .tonight, to: quickActions)
-        addQuickAction(title: "明天", reminder: .tomorrow, to: quickActions)
+        addQuickAction(title: perchLocalized("收集箱"), reminder: .none, to: quickActions)
+        addQuickAction(title: perchLocalized("10 分钟"), reminder: .tenMinutes, to: quickActions)
+        addQuickAction(title: perchLocalized("今晚"), reminder: .tonight, to: quickActions)
+        addQuickAction(title: perchLocalized("明天"), reminder: .tomorrow, to: quickActions)
 
         messageLabel.font = .systemFont(ofSize: 12)
         messageLabel.textColor = .systemRed
-        messageLabel.setAccessibilityLabel("操作反馈")
+        messageLabel.setAccessibilityLabel(perchLocalized("操作反馈"))
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(messageLabel)
 
@@ -853,7 +851,7 @@ private final class TodoWorkspaceView: NSView {
         ])
 
         let settingsButton = NSButton(
-            title: "设置…",
+            title: perchLocalized("设置…"),
             image: NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil) ?? NSImage(),
             target: self,
             action: #selector(openSettings)
@@ -873,14 +871,14 @@ private final class TodoWorkspaceView: NSView {
                 ?? Bundle.module.url(forResource: "bird-companion", withExtension: "png")!
         )
         companionImage.imageScaling = .scaleProportionallyUpOrDown
-        companionImage.setAccessibilityLabel("Perch 小伙伴")
+        companionImage.setAccessibilityLabel(perchLocalized("Perch 小伙伴"))
         companionImage.translatesAutoresizingMaskIntoConstraints = false
         sidebar.addSubview(companionImage)
 
         companionMessage.font = .systemFont(ofSize: 12, weight: .medium)
         companionMessage.textColor = .secondaryLabelColor
         companionMessage.maximumNumberOfLines = 3
-        companionMessage.setAccessibilityLabel("小伙伴消息")
+        companionMessage.setAccessibilityLabel(perchLocalized("小伙伴消息"))
         companionMessage.translatesAutoresizingMaskIntoConstraints = false
         sidebar.addSubview(companionMessage)
         NSLayoutConstraint.activate([
@@ -907,7 +905,7 @@ private final class TodoWorkspaceView: NSView {
         button.tag = reminderTag(for: reminder)
         button.bezelStyle = .rounded
         button.font = .systemFont(ofSize: 12, weight: .medium)
-        button.setAccessibilityHelp("选择提醒时间，不会立即创建待办")
+        button.setAccessibilityHelp(perchLocalized("选择提醒时间，不会立即创建待办"))
         stack.addArrangedSubview(button)
         reminderButtons[button.tag] = button
     }
@@ -921,7 +919,9 @@ private final class TodoWorkspaceView: NSView {
     @objc private func toggleCompletedVisibility() {
         areCompletedHidden.toggle()
         sectionButtons[.completed]?.isHidden = areCompletedHidden
-        completedVisibilityButton.title = areCompletedHidden ? "显示已完成" : "隐藏已完成"
+        completedVisibilityButton.title = areCompletedHidden
+            ? perchLocalized("显示已完成")
+            : perchLocalized("隐藏已完成")
         if areCompletedHidden && selectedSection == .completed {
             selectedSection = .today
         }
@@ -933,7 +933,7 @@ private final class TodoWorkspaceView: NSView {
         if !isSelecting {
             selectedTaskIDs.removeAll()
         }
-        selectionButton.title = isSelecting ? "完成选择" : "选择"
+        selectionButton.title = isSelecting ? perchLocalized("完成选择") : perchLocalized("选择")
         batchDeleteButton.isHidden = !isSelecting
         selectAllButton.isHidden = !isSelecting
         updateBatchDeleteButton()
@@ -955,22 +955,22 @@ private final class TodoWorkspaceView: NSView {
     @objc private func deleteSelectedTasks() {
         guard !selectedTaskIDs.isEmpty else {
             messageLabel.textColor = .systemRed
-            messageLabel.stringValue = "请先选择待办。"
+            messageLabel.stringValue = perchLocalized("请先选择待办。")
             return
         }
 
         let alert = NSAlert()
-        alert.messageText = "删除 \(selectedTaskIDs.count) 项待办？"
-        alert.informativeText = "此操作无法撤销。"
+        alert.messageText = perchLocalized("删除 %d 项待办？", selectedTaskIDs.count)
+        alert.informativeText = perchLocalized("此操作无法撤销。")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "删除")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: perchLocalized("删除"))
+        alert.addButton(withTitle: perchLocalized("取消"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
 
         perform { onDeleteMany(selectedTaskIDs) }
         isSelecting = false
         selectedTaskIDs.removeAll()
-        selectionButton.title = "选择"
+        selectionButton.title = perchLocalized("选择")
         batchDeleteButton.isHidden = true
         selectAllButton.isHidden = true
     }
@@ -993,7 +993,9 @@ private final class TodoWorkspaceView: NSView {
         }
         inputField.stringValue = ""
         messageLabel.textColor = .systemGreen
-        messageLabel.stringValue = reminder == .none ? "收好了，随时可以回来处理。" : "记好了，到时我会提醒你。"
+        messageLabel.stringValue = reminder == .none
+            ? perchLocalized("收好了，随时可以回来处理。")
+            : perchLocalized("记好了，到时我会提醒你。")
         selectedSection = reminder == .none ? .inbox : .today
         refresh()
     }
@@ -1021,6 +1023,7 @@ private final class TodoWorkspaceView: NSView {
         let visibleTasks = tasks
             .filter { $0.status == selectedSection.status }
             .sorted { $0.createdAt > $1.createdAt }
+        selectionButton.isHidden = visibleTasks.isEmpty && !isSelecting
         if visibleTasks.isEmpty {
             let emptyTitle = NSTextField(labelWithString: emptyTitle(for: selectedSection))
             emptyTitle.alignment = .center
@@ -1069,39 +1072,41 @@ private final class TodoWorkspaceView: NSView {
 
     private func updateBatchDeleteButton() {
         batchDeleteButton.title = selectedTaskIDs.isEmpty
-            ? "删除所选"
-            : "删除所选 \(selectedTaskIDs.count)"
+            ? perchLocalized("删除所选")
+            : perchLocalized("删除所选 %d", selectedTaskIDs.count)
         batchDeleteButton.isEnabled = !selectedTaskIDs.isEmpty
         let visibleIDs = Set(taskProvider()
             .filter { $0.status == selectedSection.status }
             .map(\.id))
         selectAllButton.title = !visibleIDs.isEmpty && visibleIDs.isSubset(of: selectedTaskIDs)
-            ? "取消全选"
-            : "全选"
+            ? perchLocalized("取消全选")
+            : perchLocalized("全选")
         selectAllButton.isEnabled = !visibleIDs.isEmpty
     }
 
     private func emptyMessage(for section: Section) -> String {
         switch section {
-        case .inbox: "想到什么就先记下来，不必现在整理。"
-        case .today: "给自己一点呼吸空间，也是一种进度。"
-        case .completed: "完成一项后，你的足迹会留在这里。"
+        case .inbox: perchLocalized("想到什么就先记下来，不必现在整理。")
+        case .today: perchLocalized("给自己一点呼吸空间，也是一种进度。")
+        case .completed: perchLocalized("完成一项后，你的足迹会留在这里。")
         }
     }
 
     private func emptyTitle(for section: Section) -> String {
         switch section {
-        case .inbox: "脑袋暂时清空啦"
-        case .today: "今天很轻盈"
-        case .completed: "下一次完成，从一件小事开始"
+        case .inbox: perchLocalized("脑袋暂时清空啦")
+        case .today: perchLocalized("今天很轻盈")
+        case .completed: perchLocalized("下一次完成，从一件小事开始")
         }
     }
 
     private func subtitle(for section: Section, count: Int) -> String {
         switch section {
-        case .inbox: count == 0 ? "随手收集，稍后安排" : "\(count) 件想法等待安排"
-        case .today: count == 0 ? "留白也是计划的一部分" : "今天还有 \(count) 件事"
-        case .completed: count == 0 ? "你的每一点进展都会留在这里" : "已经完成 \(count) 件，做得很好"
+        case .inbox: count == 0 ? perchLocalized("随手收集，稍后安排") : perchLocalized("%d 件想法等待安排", count)
+        case .today: count == 0 ? perchLocalized("留白也是计划的一部分") : perchLocalized("今天还有 %d 件事", count)
+        case .completed: count == 0
+            ? perchLocalized("你的每一点进展都会留在这里")
+            : perchLocalized("已经完成 %d 件，做得很好", count)
         }
     }
 
@@ -1110,7 +1115,7 @@ private final class TodoWorkspaceView: NSView {
         reminderButtons.forEach { tag, button in
             button.state = tag == selectedTag ? .on : .off
             button.contentTintColor = tag == selectedTag ? .controlAccentColor : .labelColor
-            button.setAccessibilityValue(tag == selectedTag ? "已选择" : "未选择")
+            button.setAccessibilityValue(tag == selectedTag ? perchLocalized("已选择") : perchLocalized("未选择"))
         }
     }
 
@@ -1127,13 +1132,24 @@ private final class TodoWorkspaceView: NSView {
         let hour = Calendar.current.component(.hour, from: .now)
         let messages: [String]
         if activeCount == 0 {
-            messages = ["今天也辛苦啦。", "我在这里，慢慢来。", "空下来时，记得伸个懒腰。"]
+            messages = [
+                perchLocalized("今天也辛苦啦。"),
+                perchLocalized("我在这里，慢慢来。"),
+                perchLocalized("空下来时，记得伸个懒腰。")
+            ]
         } else if hour >= 22 || hour < 7 {
-            messages = ["很晚啦，剩下的明天再接住。", "先休息，我会替你记着。"]
+            messages = [
+                perchLocalized("很晚啦，剩下的明天再接住。"),
+                perchLocalized("先休息，我会替你记着。")
+            ]
         } else {
-            messages = ["一次只做一件，就很好。", "我替你记着，你安心向前。", "完成小事，也值得开心。"]
+            messages = [
+                perchLocalized("一次只做一件，就很好。"),
+                perchLocalized("我替你记着，你安心向前。"),
+                perchLocalized("完成小事，也值得开心。")
+            ]
         }
-        let next = messages.randomElement() ?? "我在这里。"
+        let next = messages.randomElement() ?? perchLocalized("我在这里。")
         companionMessage.stringValue = next
     }
 
@@ -1202,8 +1218,8 @@ private final class TaskRowView: NSView {
             image: NSImage(
                 systemSymbolName: isSelecting ? (isSelected ? "checkmark.circle.fill" : "circle") : (task.status == .completed ? "checkmark.circle.fill" : "circle"),
                 accessibilityDescription: isSelecting
-                    ? "选择待办"
-                    : (task.status == .completed ? "恢复待办" : "完成待办")
+                    ? perchLocalized("选择待办")
+                    : (task.status == .completed ? perchLocalized("恢复待办") : perchLocalized("完成待办"))
             ) ?? NSImage(),
             target: self,
             action: #selector(performPrimaryAction)
@@ -1217,7 +1233,7 @@ private final class TaskRowView: NSView {
         let selectButton = NSButton(checkboxWithTitle: "", target: self, action: #selector(selectTask))
         selectButton.state = isSelected ? .on : .off
         selectButton.isHidden = !isSelecting
-        selectButton.toolTip = isSelected ? "取消选择" : "选择待办"
+        selectButton.toolTip = isSelected ? perchLocalized("取消选择") : perchLocalized("选择待办")
         selectButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(selectButton)
 
@@ -1237,7 +1253,7 @@ private final class TaskRowView: NSView {
         reminder.translatesAutoresizingMaskIntoConstraints = false
         addSubview(reminder)
 
-        let actions = NSButton(image: NSImage(systemSymbolName: "ellipsis", accessibilityDescription: "待办操作") ?? NSImage(), target: self, action: #selector(showActions(_:)))
+        let actions = NSButton(image: NSImage(systemSymbolName: "ellipsis", accessibilityDescription: perchLocalized("待办操作")) ?? NSImage(), target: self, action: #selector(showActions(_:)))
         actions.bezelStyle = .inline
         actions.isHidden = isSelecting
         actions.translatesAutoresizingMaskIntoConstraints = false
@@ -1295,12 +1311,12 @@ private final class TaskRowView: NSView {
 
     @objc private func showActions(_ sender: NSButton) {
         let menu = NSMenu()
-        addMenuItem("移到收集箱", action: #selector(clearReminder), to: menu)
-        addMenuItem("10 分钟后", action: #selector(remindInTenMinutes), to: menu)
-        addMenuItem("今晚", action: #selector(remindTonight), to: menu)
-        addMenuItem("明天", action: #selector(remindTomorrow), to: menu)
+        addMenuItem(perchLocalized("移到收集箱"), action: #selector(clearReminder), to: menu)
+        addMenuItem(perchLocalized("10 分钟后"), action: #selector(remindInTenMinutes), to: menu)
+        addMenuItem(perchLocalized("今晚"), action: #selector(remindTonight), to: menu)
+        addMenuItem(perchLocalized("明天"), action: #selector(remindTomorrow), to: menu)
         menu.addItem(.separator())
-        addMenuItem("删除", action: #selector(deleteTask), to: menu)
+        addMenuItem(perchLocalized("删除"), action: #selector(deleteTask), to: menu)
         menu.popUp(positioning: nil, at: NSPoint(x: sender.bounds.midX, y: sender.bounds.minY), in: sender)
     }
 
@@ -1316,11 +1332,11 @@ private final class TaskRowView: NSView {
     @objc private func remindTomorrow() { onUpdateReminder(task.id, .tomorrow) }
     @objc private func deleteTask() {
         let alert = NSAlert()
-        alert.messageText = "删除这项待办？"
-        alert.informativeText = "此操作无法撤销。"
+        alert.messageText = perchLocalized("删除这项待办？")
+        alert.informativeText = perchLocalized("此操作无法撤销。")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "删除")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: perchLocalized("删除"))
+        alert.addButton(withTitle: perchLocalized("取消"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         onDelete(task.id)
     }

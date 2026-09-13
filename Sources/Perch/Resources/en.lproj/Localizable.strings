@@ -1,0 +1,135 @@
+/*
+   English text for the Perch macOS app.
+
+   Keys are the Chinese source strings. A key with no entry here falls back to
+   the key itself, so any new text stays readable before it is translated.
+*/
+
+/* Task storage */
+"请输入待办内容。" = "Write something first.";
+
+/* Bird widget */
+"打开 Perch" = "Open Perch";
+
+/* Keyboard shortcuts */
+"新建待办" = "New Task";
+"关闭待办窗口" = "Close Task Window";
+"退出 Perch" = "Quit Perch";
+"打开设置" = "Open Settings";
+"切换到收集箱" = "Go to Inbox";
+"切换到今天" = "Go to Today";
+"切换到已完成" = "Go to Completed";
+"键盘快捷键" = "Keyboard Shortcuts";
+"点击快捷键后按下新的组合键。快捷键只在 Perch 位于前台时生效。" = "Click a shortcut, then press a new key combination. Shortcuts work while Perch is in front.";
+"恢复默认快捷键" = "Restore Defaults";
+"请至少包含一个修饰键（⌘、⌥、⌃ 或 ⇧）。" = "Include at least one modifier key (⌘, ⌥, ⌃, or ⇧).";
+"“%@”已用于“%@”。" = "“%@” is already used for “%@”.";
+"已恢复默认快捷键。" = "Default shortcuts restored.";
+"点击后按下新的快捷键" = "Click, then press a new shortcut";
+"按下快捷键…" = "Press a shortcut…";
+
+/* Due reminder */
+"现在可以处理" = "Ready for you";
+"完成这项待办" = "Complete this task";
+"点击后完成这项待办" = "Click to complete this task";
+"稍后…" = "Later…";
+"另有 %d 项到期待办" = "%d more tasks are due";
+"10 分钟后提醒" = "Remind me in 10 minutes";
+"今晚提醒" = "Remind me tonight";
+"明天提醒" = "Remind me tomorrow";
+"删除…" = "Delete…";
+
+/* Menu bar and panels */
+"设置" = "Settings";
+"显示待办" = "Show Tasks";
+"小鸟回到右下角" = "Send the Bird to the Corner";
+"暂停提醒" = "Pause Reminders";
+"使用入门…" = "Getting Started…";
+"设置…" = "Settings…";
+"关于 Perch" = "About Perch";
+"文件" = "File";
+"查看" = "View";
+"Perch，提醒已暂停" = "Perch, reminders paused";
+"到期提醒" = "Due Reminder";
+
+/* First run */
+"欢迎来到 Perch" = "Welcome to Perch";
+"1. 点击桌面右下角的小鸟，快速记下一件事。" = "1. Click the bird in the corner of your desktop to note something down.";
+"2. 选择 10 分钟、今晚或明天，Perch 到时只提醒一件事。" = "2. Choose 10 minutes, tonight, or tomorrow—Perch reminds you about one thing at a time.";
+"3. 需要专注时，从菜单栏打开“暂停提醒”，小鸟会安静下来。" = "3. When you need to focus, choose Pause Reminders in the menu bar and the bird will settle down.";
+"开始使用" = "Get Started";
+
+/* Task errors */
+"待办尚未准备好，请稍后再试。" = "Tasks aren't ready yet. Try again in a moment.";
+"无法保存待办，请稍后再试。" = "Could not save the task. Try again in a moment.";
+"无法更新待办，请稍后再试。" = "Could not update the task. Try again in a moment.";
+"无法恢复待办，请稍后再试。" = "Could not restore the task. Try again in a moment.";
+"无法删除待办，请稍后再试。" = "Could not delete the task. Try again in a moment.";
+
+/* Workspace */
+"收集箱" = "Inbox";
+"今天" = "Today";
+"已完成" = "Completed";
+"隐藏已完成" = "Hide Completed";
+"显示已完成" = "Show Completed";
+"选择" = "Select";
+"完成选择" = "Done Selecting";
+"全选" = "Select All";
+"取消全选" = "Deselect All";
+"删除所选" = "Delete Selected";
+"删除所选 %d" = "Delete Selected (%d)";
+"现在想记下什么？" = "What's on your mind?";
+"新待办" = "New task";
+"输入内容，选择提醒时间，然后按回车添加" = "Type a task, choose a reminder, then press Return to add it";
+"添加" = "Add";
+"10 分钟" = "10 min";
+"今晚" = "Tonight";
+"明天" = "Tomorrow";
+"操作反馈" = "Action feedback";
+"选择提醒时间，不会立即创建待办" = "Choose a reminder time; nothing is created yet";
+"请先选择待办。" = "Select a task first.";
+"删除 %d 项待办？" = "Delete %d tasks?";
+"收好了，随时可以回来处理。" = "Saved. Come back whenever you are ready.";
+"记好了，到时我会提醒你。" = "Got it. I will remind you when it is time.";
+
+/* Empty states and subtitles */
+"想到什么就先记下来，不必现在整理。" = "Note things down as they come; sorting can wait.";
+"给自己一点呼吸空间，也是一种进度。" = "Leaving room to breathe is progress too.";
+"完成一项后，你的足迹会留在这里。" = "What you finish leaves a trail here.";
+"脑袋暂时清空啦" = "Your head is clear for now";
+"今天很轻盈" = "Today feels light";
+"下一次完成，从一件小事开始" = "The next win starts with one small thing";
+"随手收集，稍后安排" = "Collect now, plan later";
+"%d 件想法等待安排" = "%d thoughts waiting to be planned";
+"留白也是计划的一部分" = "Empty space is part of the plan";
+"今天还有 %d 件事" = "%d things left today";
+"你的每一点进展都会留在这里" = "Every bit of progress lands here";
+"已经完成 %d 件，做得很好" = "%d done — nicely handled";
+
+/* Companion */
+"Perch 小伙伴" = "Perch companion";
+"小伙伴消息" = "Companion message";
+"已选择" = "Selected";
+"未选择" = "Not selected";
+"今天也辛苦啦。" = "You did well today.";
+"我在这里，慢慢来。" = "I am here. Take your time.";
+"空下来时，记得伸个懒腰。" = "When you get a moment, stretch.";
+"很晚啦，剩下的明天再接住。" = "It is late. I will hold the rest until tomorrow.";
+"先休息，我会替你记着。" = "Get some rest; I will remember for you.";
+"一次只做一件，就很好。" = "One thing at a time is plenty.";
+"我替你记着，你安心向前。" = "I will keep track; you keep going.";
+"完成小事，也值得开心。" = "Small wins count too.";
+"我在这里。" = "I am here.";
+
+/* Task rows */
+"选择待办" = "Select task";
+"恢复待办" = "Restore task";
+"完成待办" = "Complete task";
+"取消选择" = "Deselect";
+"待办操作" = "Task actions";
+"移到收集箱" = "Move to Inbox";
+"10 分钟后" = "In 10 minutes";
+"删除" = "Delete";
+"取消" = "Cancel";
+"删除这项待办？" = "Delete this task?";
+"此操作无法撤销。" = "This cannot be undone.";
