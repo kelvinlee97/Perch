@@ -1,71 +1,47 @@
 <p align="center">
-  <img src="./docs/images/perch-idle.png" width="280" alt="Perch, a small green desktop bird, waiting quietly" />
+  <img src="./docs/images/perch-idle.png" width="160" alt="Perch, a small green desktop bird waiting in the corner of the screen" />
 </p>
 
 <h1 align="center">Perch</h1>
 
 <p align="center">
-  <strong>A gentle to-do companion for Mac.</strong><br />
-  Capture what matters, keep it close, and focus on one thing at a time.
+  <strong>A small bird for the things on your mind.</strong><br />
+  Click to capture a task, pick a reminder, and get back to your day.
 </p>
 
-## Meet Perch
+<p align="center">
+  Early preview · macOS 14+<br />
+  <a href="#build-for-mac">Build for Mac</a> ·
+  <a href="./web/README.md">Web setup</a> ·
+  <a href="./docs/releasing.md">Publishing</a>
+</p>
 
-Perch is a lightweight, local-first to-do app that lives on your Mac as a small desktop bird.
+## What it does
 
-Instead of asking you to maintain another complicated productivity system, Perch gives loose thoughts a quiet place to land. Click the bird, write down a task, and return to what you were doing. When it is time to act, Perch is designed to surface one useful reminder—not an overwhelming wall of notifications.
+- **Capture in seconds.** Click the bird in the corner of your desktop, type the task, and return to what you were doing.
+- **One reminder at a time.** When something comes due, the earliest task appears beside the bird and the rest wait in the queue. Complete it, push it to 10 minutes, tonight, or tomorrow, or delete it.
+- **Stays on your Mac.** Tasks, reminders, and preferences live in a local JSON store. No account, no sync, no network.
 
-## The problem it solves
+Tasks are organized into Inbox, Today, and Completed. Reminders can be paused from the Perch menu, and common actions have keyboard shortcuts.
 
-Most to-do apps are excellent at collecting tasks. Over time, though, the list itself can become another source of work:
+## Where your tasks live
 
-- Capturing a small thought means opening a full task manager.
-- Long lists make everything feel equally urgent.
-- Frequent notifications interrupt focus instead of supporting it.
-- Cloud accounts and setup add friction to something that should feel immediate.
+> **The Mac app and the web workspace are separate apps with separate data.**
+> Mac data stays on your Mac in `~/Library/Application Support/Perch`.
+> The [web workspace](./web/README.md) uses its own Supabase account and cloud database.
+> They do not sync.
 
-Perch takes a calmer approach: **make capture effortless, keep tasks local, and bring attention to one thing at a time.**
+## Status
 
-## A bird that stays out of the way
+Perch is an early macOS preview.
 
-The bird rests in the corner of your desktop without taking over your workspace. It is a visual anchor for the things you do not want to keep carrying in your head.
+Working today: the desktop companion, local task storage, the task workspace, quick scheduling, the single-task due reminder with its complete, defer, and delete actions, first-run guidance, and manual reminder pause.
 
-## What you can do today
+Not yet: scheduled quiet hours, configurable bird behavior, and a signed, notarized public download.
 
-- Capture a task in a few seconds.
-- Sort tasks into **Inbox**, **Today**, and **Completed**.
-- Choose a quick time: no reminder, 10 minutes, tonight, or tomorrow.
-- See the earliest due task beside the bird, with later due tasks kept in the queue.
-- Complete, restore, reschedule, or delete tasks.
-- Pause reminders immediately from the Perch menu.
-- Use keyboard shortcuts for common actions.
-- Keep everything on your Mac in a local JSON store.
-- Open the workspace from the bird or the menu bar.
+## Build for Mac
 
-## The experience we are building
-
-Perch is guided by a few simple ideas:
-
-1. **One task deserves one moment of attention.** Due tasks should appear one at a time, with the rest waiting quietly.
-2. **Capture should not break your flow.** Writing something down should take seconds.
-3. **Reminders should feel helpful, not demanding.** Perch should nudge, never nag.
-4. **Your personal tasks should stay personal.** The core experience works locally without an account or network service.
-5. **Personality can make utility feel lighter.** The bird is not decoration—it reflects the state of your tasks and makes returning to them feel less clinical.
-
-## Project status
-
-Perch is an early macOS MVP under active development.
-
-The desktop companion, local task storage, task workspace, quick scheduling controls, due-reminder queue, core reminder actions, first-run guidance, and manual reminder pause are implemented. Scheduled quiet hours, configurable bird behavior, and release-ready signing and notarization are still in progress.
-
-## Build it locally
-
-### Requirements
-
-- macOS 14 or later
-- Apple silicon or Intel Mac
-- Swift 6 toolchain
-- Full Xcode for eventual Developer ID signing and notarization
+Requirements: macOS 14 or later, an Apple silicon or Intel Mac, and a Swift 6 toolchain.
 
 Choose a bundle identifier you control, then run:
 
@@ -73,78 +49,27 @@ Choose a bundle identifier you control, then run:
 PERCH_BUNDLE_ID=com.example.perch zsh Scripts/package-app.zsh
 ```
 
-The script creates or replaces:
-
-```text
-release/Perch.app
-```
-
-Open the local build directly:
+That creates and replaces `release/Perch.app`. Open it directly:
 
 ```zsh
 open release/Perch.app
 ```
 
-To build and open Perch in one step:
+The local build is ad hoc signed so macOS can verify that the bundle is internally consistent, and the script does not install Perch in `/Applications`. Move the app there manually if you want to open it from Spotlight or Launchpad.
+
+## Development
 
 ```zsh
-PERCH_BUNDLE_ID=com.example.perch zsh Scripts/package-app.zsh && open release/Perch.app
-```
-
-Run the automated checks with:
-
-```zsh
+swift build
 zsh Scripts/test.zsh
 ```
 
-The script does not install Perch in `/Applications`. Move the app there manually if you want to open it from Spotlight or Launchpad. The local build is ad hoc signed so macOS can verify that the bundle is internally consistent.
+For the web workspace, see [web/README.md](./web/README.md).
 
-> [!NOTE]
-> This build is intended for local development and testing. It is not yet Developer ID-signed or notarized for public distribution.
+## Publishing
 
-## Create a public release
+Public releases require full Xcode, an Apple Developer Program membership, a Developer ID Application certificate, and a `notarytool` keychain profile. The signing, notarization, DMG, and Gatekeeper workflow lives in [docs/releasing.md](./docs/releasing.md).
 
-Public releases require full Xcode, an Apple Developer Program membership, a Developer ID Application certificate, and a `notarytool` keychain profile.
+## Privacy
 
-Store the notarization credentials once:
-
-```zsh
-xcrun notarytool store-credentials "perch-notary"
-```
-
-Then create the signed, notarized, and stapled disk image:
-
-```zsh
-PERCH_BUNDLE_ID=ink.example.perch \
-PERCH_VERSION=0.1.0 \
-PERCH_BUILD_NUMBER=1 \
-CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
-NOTARY_PROFILE=perch-notary \
-zsh Scripts/package-release.zsh
-```
-
-The release script builds a Universal Binary for Apple silicon and Intel Macs, then verifies the Developer ID signature, hardened runtime, secure timestamp, notarization ticket, mounted app, and Gatekeeper assessment before replacing:
-
-```text
-release/Perch.dmg
-```
-
-It refuses to create a public release with an ad hoc identity or while Command Line Tools is selected instead of full Xcode.
-
-After uploading the DMG, download it again with Safari or another browser and verify that exact downloaded file:
-
-```zsh
-PERCH_BUNDLE_ID=ink.example.perch \
-PERCH_VERSION=0.1.0 \
-PERCH_BUILD_NUMBER=1 \
-PERCH_TEAM_ID=TEAMID \
-zsh Scripts/verify-downloaded-release.zsh ~/Downloads/Perch.dmg
-```
-
-This check requires browser quarantine metadata and verifies the stapled ticket, mounted app, exact Apple Developer team, bundle ID, version, build number, hardened runtime, secure timestamp, Gatekeeper assessment, and architecture without copying anything into `/Applications`.
-
-See Apple's guides for [distributing macOS software](https://developer.apple.com/macos/distribution/) and [notarizing macOS software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
-
-## Privacy and support
-
-Perch does not require an account or transmit task and usage data. Read the [privacy policy](./PRIVACY.md) or review the [changelog](./CHANGELOG.md). A public support contact will be added before the beta download becomes available.
+The Mac app does not require an account or transmit task or usage data. Read the [privacy policy](./PRIVACY.md) or the [changelog](./CHANGELOG.md). A public support contact will be added before the beta download becomes available.
